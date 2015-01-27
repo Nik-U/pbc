@@ -29,34 +29,30 @@ type Params interface {
 	String() string
 }
 
-type paramsImpl struct {
-	data C.pbc_param_ptr
-}
-
 func NewParamsFromString(data string) (Pairing, error) {
 	cstr := C.CString(data)
 	defer C.free(unsafe.Pointer(cstr))
 
 	params := makeParams()
-	if ok := C.pbc_param_init_set_str(params.data, cstr); ok != 0 {
+	if ok := C.pbc_param_init_set_str(params, cstr); ok != 0 {
 		return nil, ErrInvalidParamString
 	}
 	return params, nil
 }
 
-func (params *paramsImpl) NewPairing() Pairing {
+func (params *C.struct_pbc_param_s) NewPairing() Pairing {
 	return NewPairingFromParams(params)
 }
 
-func (params *paramsImpl) WriteTo(w io.Writer) (n int64, err error) {
+func (params *C.struct_pbc_param_s) WriteTo(w io.Writer) (n int64, err error) {
 	count, err := io.WriteString(w, params.String())
 	return int64(count), err
 }
 
-func (params *paramsImpl) String() string {
+func (params *C.struct_pbc_param_s) String() string {
 	var buf *C.char
 	var bufLen C.size_t
-	if C.param_out_str(&buf, &bufLen, params.data) == 0 {
+	if C.param_out_str(&buf, &bufLen, params) == 0 {
 		return ""
 	}
 	str := C.GoStringN(buf, C.int(bufLen))
@@ -64,12 +60,12 @@ func (params *paramsImpl) String() string {
 	return str
 }
 
-func paramsFinalizer(params *paramsImpl) {
-	C.pbc_param_clear(params.data)
+func paramsFinalizer(params *C.struct_pbc_param_s) {
+	C.pbc_param_clear(params)
 }
 
-func makeParams() *paramsImpl {
-	params := &paramsImpl{data: &C.struct_pbc_param_s{}}
+func makeParams() *C.struct_pbc_param_s {
+	params := &C.struct_pbc_param_s{}
 	runtime.SetFinalizer(params, paramsFinalizer)
 	return params
 }
