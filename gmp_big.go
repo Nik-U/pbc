@@ -17,6 +17,7 @@ var wordSize C.size_t
 var bitsPerWord C.size_t
 
 func clearmpz(x *C.mpz_t) {
+	println("clearmpz")
 	C.mpz_clear(&x[0])
 }
 

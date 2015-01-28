@@ -4,7 +4,7 @@ package pbc
 #cgo LDFLAGS: /usr/local/lib/libpbc.a -lgmp
 #include <pbc/pbc.h>
 
-int param_out_str(char** bufp, size_t* sizep, pbc_param_t p) {
+int param_out_str_wrapper(char** bufp, size_t* sizep, pbc_param_t p) {
 	FILE* handle = open_memstream(bufp, sizep);
 	if (!handle) return 0;
 	pbc_param_out_str(handle, p);
@@ -29,8 +29,8 @@ type Params interface {
 	String() string
 }
 
-func NewParamsFromString(data string) (Pairing, error) {
-	cstr := C.CString(data)
+func NewParamsFromString(s string) (Params, error) {
+	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
 
 	params := makeParams()
@@ -52,7 +52,7 @@ func (params *C.struct_pbc_param_s) WriteTo(w io.Writer) (n int64, err error) {
 func (params *C.struct_pbc_param_s) String() string {
 	var buf *C.char
 	var bufLen C.size_t
-	if C.param_out_str(&buf, &bufLen, params) == 0 {
+	if C.param_out_str_wrapper(&buf, &bufLen, params) == 0 {
 		return ""
 	}
 	str := C.GoStringN(buf, C.int(bufLen))
@@ -60,12 +60,13 @@ func (params *C.struct_pbc_param_s) String() string {
 	return str
 }
 
-func paramsFinalizer(params *C.struct_pbc_param_s) {
+func clearParams(params *C.struct_pbc_param_s) {
+	println("clearparams")
 	C.pbc_param_clear(params)
 }
 
 func makeParams() *C.struct_pbc_param_s {
 	params := &C.struct_pbc_param_s{}
-	runtime.SetFinalizer(params, paramsFinalizer)
+	runtime.SetFinalizer(params, clearParams)
 	return params
 }

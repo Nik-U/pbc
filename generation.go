@@ -19,7 +19,7 @@ void genPairingD(pbc_param_ptr p, unsigned int D, unsigned int bitlimit) {
 }
 
 void genPairingG(pbc_param_ptr p, unsigned int D, unsigned int bitlimit) {
-	pbc_cm_search_d(acceptPairingG, p, D, bitlimit);
+	pbc_cm_search_g(acceptPairingG, p, D, bitlimit);
 }
 */
 import "C"
