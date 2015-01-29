@@ -1,7 +1,6 @@
 package pbc
 
 /*
-#cgo LDFLAGS: /usr/local/lib/libpbc.a -lgmp
 #include <pbc/pbc.h>
 */
 import "C"
@@ -278,7 +277,7 @@ func (el *elementImpl) PowerZn(power Power, i Element) Element {
 }
 
 func (el *elementImpl) Pair(x, y Element) Element {
-	C.element_pairing(el.data, x.impl().data, y.impl().data)
+	C.pairing_apply(el.data, x.impl().data, y.impl().data, el.pairing.data)
 	return el
 }
 

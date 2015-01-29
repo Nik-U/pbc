@@ -1,7 +1,6 @@
 package pbc
 
 /*
-#cgo LDFLAGS: /usr/local/lib/libpbc.a -lgmp
 #include <pbc/pbc.h>
 */
 import "C"

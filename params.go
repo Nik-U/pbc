@@ -1,7 +1,6 @@
 package pbc
 
 /*
-#cgo LDFLAGS: /usr/local/lib/libpbc.a -lgmp
 #include <pbc/pbc.h>
 
 int param_out_str_wrapper(char** bufp, size_t* sizep, pbc_param_t p) {

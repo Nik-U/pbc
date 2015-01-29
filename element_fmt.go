@@ -1,7 +1,6 @@
 package pbc
 
 /*
-#cgo LDFLAGS: /usr/local/lib/libpbc.a -lgmp
 #include <pbc/pbc.h>
 
 int element_out_str_wrapper(char** bufp, size_t* sizep, int base, element_t e) {
