@@ -75,7 +75,7 @@ func (el *elementImpl) SetString(s string, base int) (Element, bool) {
 }
 
 func (el *elementImpl) BigInt() *big.Int {
-	mpz := newmpz()
+	mpz := newMpz()
 	C.element_to_mpz(&mpz[0], el.data)
 	return mpz2big(mpz)
 }

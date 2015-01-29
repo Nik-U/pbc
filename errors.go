@@ -11,6 +11,8 @@ var (
 	ErrBadPairList        = errors.New("pairing product list is in an invalid format")
 	ErrBadInput           = errors.New("invalid element format during scan")
 	ErrBadVerb            = errors.New("invalid verb specified for scan")
+	ErrIllegalNil         = errors.New("received nil when non-nil was expected")
 	ErrOutOfRange         = errors.New("index out of range")
+	ErrEntropyFailure     = errors.New("error while reading from entropy source")
 	ErrInternal           = errors.New("a severe internal error has lead to possible memory corruption")
 )

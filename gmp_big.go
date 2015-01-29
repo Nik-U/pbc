@@ -14,34 +14,42 @@ import (
 var wordSize C.size_t
 var bitsPerWord C.size_t
 
-func clearmpz(x *C.mpz_t) {
+func clearMpz(x *C.mpz_t) {
 	println("clearmpz")
 	C.mpz_clear(&x[0])
 }
 
-func newmpz() *C.mpz_t {
+func newMpz() *C.mpz_t {
 	out := &C.mpz_t{}
 	C.mpz_init(&out[0])
-	runtime.SetFinalizer(out, clearmpz)
+	runtime.SetFinalizer(out, clearMpz)
 	return out
 }
 
-func big2mpz(num *big.Int) *C.mpz_t {
+func big2thisMpz(num *big.Int, out *C.mpz_t) {
 	words := num.Bits()
-	out := newmpz()
 	if len(words) > 0 {
 		C.mpz_import(&out[0], C.size_t(len(words)), -1, wordSize, 0, 0, unsafe.Pointer(&words[0]))
 	}
+}
+
+func big2mpz(num *big.Int) *C.mpz_t {
+	out := newMpz()
+	big2thisMpz(num, out)
 	return out
 }
 
-func mpz2big(num *C.mpz_t) (out *big.Int) {
+func mpz2thisBig(num *C.mpz_t, out *big.Int) {
 	wordsNeeded := (C.mpz_sizeinbase(&num[0], 2) + (bitsPerWord - 1)) / bitsPerWord
 	words := make([]big.Word, wordsNeeded)
 	var wordsWritten C.size_t
 	C.mpz_export(unsafe.Pointer(&words[0]), &wordsWritten, -1, wordSize, 0, 0, &num[0])
-	out = &big.Int{}
 	out.SetBits(words)
+}
+
+func mpz2big(num *C.mpz_t) (out *big.Int) {
+	out = &big.Int{}
+	mpz2thisBig(num, out)
 	return
 }
 
