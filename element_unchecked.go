@@ -6,12 +6,9 @@ package pbc
 import "C"
 
 import (
-	"errors"
 	"math/big"
 	"unsafe"
 )
-
-var ErrBadPairList = errors.New("pairing product list is in an invalid format")
 
 func (el *elementImpl) impl() *elementImpl { return el }
 

@@ -6,13 +6,10 @@ package pbc
 import "C"
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
 )
-
-var ErrUnknownField = errors.New("unchecked element initialized in unknown field")
 
 type Element interface {
 	NewFieldElement() Element

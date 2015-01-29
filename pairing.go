@@ -59,7 +59,7 @@ func NewPairingFromString(params string) (Pairing, error) {
 
 func NewPairingFromParams(params Params) Pairing {
 	pairing := makePairing()
-	C.pairing_init_pbc_param(pairing.data, params.(*C.struct_pbc_param_s))
+	C.pairing_init_pbc_param(pairing.data, params.(*paramsImpl).data)
 	return pairing
 }
 

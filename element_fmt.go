@@ -15,15 +15,9 @@ import "C"
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"unsafe"
-)
-
-var (
-	ErrBadInput = errors.New("invalid element format during scan")
-	ErrBadVerb  = errors.New("invalid verb specified for scan")
 )
 
 func (el *elementImpl) errorFormat(f fmt.State, c rune, err string) {

@@ -5,18 +5,7 @@ package pbc
 */
 import "C"
 
-import (
-	"errors"
-	"math/big"
-)
-
-var (
-	ErrIllegalOp    = errors.New("operation is illegal for elements of this type")
-	ErrUncheckedOp  = errors.New("unchecked element passed to checked operation")
-	ErrIncompatible = errors.New("elements are from incompatible fields or pairings")
-	ErrOutOfRange   = errors.New("index out of range")
-	ErrInternal     = errors.New("a severe internal error has lead to possible memory corruption")
-)
+import "math/big"
 
 func (el *checkedElement) impl() *elementImpl { return &el.unchecked }
 
