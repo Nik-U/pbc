@@ -7,9 +7,12 @@ package pbc
 import "C"
 
 import (
+	"errors"
 	"math/big"
 	"unsafe"
 )
+
+var ErrBadPairList = errors.New("pairing product list is in an invalid format")
 
 func (el *elementImpl) impl() *elementImpl { return el }
 
@@ -45,6 +48,11 @@ func (el *elementImpl) Set(src Element) Element {
 	return el
 }
 
+func (el *elementImpl) SetFromHash(hash []byte) Element {
+	C.element_from_hash(el.data, unsafe.Pointer(&hash[0]), C.int(len(hash)))
+	return el
+}
+
 func (el *elementImpl) SetBytes(buf []byte) Element {
 	C.element_from_bytes(el.data, (*C.uchar)(unsafe.Pointer(&buf[0])))
 	return el
@@ -57,11 +65,6 @@ func (el *elementImpl) SetXBytes(buf []byte) Element {
 
 func (el *elementImpl) SetCompressedBytes(buf []byte) Element {
 	C.element_from_bytes_compressed(el.data, (*C.uchar)(unsafe.Pointer(&buf[0])))
-	return el
-}
-
-func (el *elementImpl) SetFromHash(hash []byte) Element {
-	C.element_from_hash(el.data, unsafe.Pointer(&hash[0]), C.int(len(hash)))
 	return el
 }
 
@@ -262,20 +265,64 @@ func (el *elementImpl) Pow3Zn(x, i, y, j, z, k Element) Element {
 	return el
 }
 
-func (el *elementImpl) PreparePower() Power {
-	power := &powerImpl{}
-	initPower(power, el)
-	return power
+func (el *elementImpl) PreparePower() Power { return initPower(el) }
+
+func (el *elementImpl) PowerBig(power Power, i *big.Int) Element {
+	C.element_pp_pow(el.data, &big2mpz(i)[0], power.(*powerImpl).data)
+	return el
 }
 
-func (power *powerImpl) PowBig(i *big.Int) Element {
-	C.element_pp_pow(power.target.data, &big2mpz(i)[0], power.data)
-	return power.target
+func (el *elementImpl) PowerZn(power Power, i Element) Element {
+	C.element_pp_pow_zn(el.data, i.impl().data, power.(*powerImpl).data)
+	return el
 }
 
-func (power *powerImpl) PowZn(i Element) Element {
-	C.element_pp_pow_zn(power.target.data, i.impl().data, power.data)
-	return power.target
+func (el *elementImpl) Pair(x, y Element) Element {
+	C.element_pairing(el.data, x.impl().data, y.impl().data)
+	return el
+}
+
+func (el *elementImpl) doProdPair(in1, in2 []C.struct_element_s) Element {
+	x := (*C.element_t)(unsafe.Pointer(&in1[0]))
+	y := (*C.element_t)(unsafe.Pointer(&in2[0]))
+	C.element_prod_pairing(el.data, x, y, C.int(len(in1)))
+	return el
+}
+
+func (el *elementImpl) ProdPair(elements ...Element) Element {
+	n := len(elements)
+	if n%2 != 0 {
+		panic(ErrBadPairList)
+	}
+	half := n / 2
+	in1 := make([]C.struct_element_s, half)
+	in2 := make([]C.struct_element_s, half)
+	for i, j := 0, 0; j < n; i, j = i+1, j+2 {
+		in1[i] = *elements[j].impl().data
+		in2[i] = *elements[j+1].impl().data
+	}
+	return el.doProdPair(in1, in2)
+}
+
+func (el *elementImpl) ProdPairSlice(x, y []Element) Element {
+	n := len(x)
+	if n != len(y) {
+		panic(ErrBadPairList)
+	}
+	in1 := make([]C.struct_element_s, n)
+	in2 := make([]C.struct_element_s, n)
+	for i := 0; i < n; i++ {
+		in1[i] = *x[i].impl().data
+		in2[i] = *y[i].impl().data
+	}
+	return el.doProdPair(in1, in2)
+}
+
+func (el *elementImpl) PreparePairer() Pairer { return initPairer(el) }
+
+func (el *elementImpl) PairerPair(pairer Pairer, x Element) Element {
+	C.pairing_pp_apply(el.data, x.impl().data, pairer.(*pairerImpl).data)
+	return el
 }
 
 func (el *elementImpl) BruteForceDL(g, h Element) Element {

@@ -86,15 +86,17 @@ func (el *elementImpl) Format(f fmt.State, c rune) {
 
 func (el *checkedElement) Format(f fmt.State, c rune) {
 	if c == 'v' && f.Flag('#') {
-		fmt.Fprintf(f, "pbc.Element{Checked: true, Integer: %t, Field: %p, Pairing: %p, Addr: %p}", el.isInteger, el.fieldPtr, el.pairing, el)
+		fmt.Fprintf(f, "pbc.Element{Checked: true, Integer: %t, Field: %p, Pairing: %p, Addr: %p}", el.isInteger, el.fieldPtr, el.unchecked.pairing, el)
 	} else {
-		el.elementImpl.Format(f, c)
+		el.unchecked.Format(f, c)
 	}
 }
 
 func (el *elementImpl) String() string {
 	return fmt.Sprintf("%s", el)
 }
+
+func (el *checkedElement) String() string { return el.unchecked.String() }
 
 func (el *elementImpl) Scan(state fmt.ScanState, verb rune) error {
 	if verb != 's' && verb != 'v' {
@@ -181,4 +183,8 @@ ReadLoop:
 		return ErrBadInput
 	}
 	return nil
+}
+
+func (el *checkedElement) Scan(state fmt.ScanState, verb rune) error {
+	return el.unchecked.Scan(state, verb)
 }

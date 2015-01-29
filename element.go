@@ -77,11 +77,20 @@ type Element interface {
 	Pow3Zn(x, i, y, j, z, k Element) Element
 
 	PreparePower() Power
+	PowerBig(Power, *big.Int) Element
+	PowerZn(Power, Element) Element
 
 	BruteForceDL(g, h Element) Element
 	PollardRhoDL(g, h Element) Element
 
 	Rand() Element
+
+	Pair(x, y Element) Element
+	ProdPair(elements ...Element) Element
+	ProdPairSlice(x, y []Element) Element
+
+	PreparePairer() Pairer
+	PairerPair(Pairer, Element) Element
 
 	impl() *elementImpl
 }
@@ -92,23 +101,9 @@ type elementImpl struct {
 }
 
 type checkedElement struct {
-	elementImpl
+	unchecked elementImpl
 	fieldPtr  *C.struct_field_s
 	isInteger bool
-}
-
-type Power interface {
-	PowBig(i *big.Int) Element
-	PowZn(i Element) Element
-}
-
-type powerImpl struct {
-	target *elementImpl
-	data   *C.struct_element_pp_s
-}
-
-type checkedPower struct {
-	powerImpl
 }
 
 func (pairing *pairingImpl) NewG1() Element                 { return makeChecked(pairing, G1, pairing.data.G1) }
@@ -153,8 +148,26 @@ func makeChecked(pairing *pairingImpl, field Field, fieldPtr *C.struct_field_s) 
 		fieldPtr:  fieldPtr,
 		isInteger: field == Zr,
 	}
-	initElement(&element.elementImpl, pairing, true, field)
+	initElement(&element.unchecked, pairing, true, field)
 	return element
+}
+
+type Power interface {
+	PowBig(i *big.Int) Element
+	PowZn(i Element) Element
+}
+
+type powerImpl struct {
+	target Element
+	data   *C.struct_element_pp_s
+}
+
+func (power *powerImpl) PowBig(i *big.Int) Element {
+	return power.target.PowerBig(power, i)
+}
+
+func (power *powerImpl) PowZn(i Element) Element {
+	return power.target.PowerZn(power, i)
 }
 
 func clearPower(power *powerImpl) {
@@ -162,9 +175,40 @@ func clearPower(power *powerImpl) {
 	C.element_pp_clear(power.data)
 }
 
-func initPower(power *powerImpl, target *elementImpl) {
-	power.target = target
-	power.data = &C.struct_element_pp_s{}
-	C.element_pp_init(power.data, target.data)
+func initPower(target Element) Power {
+	power := &powerImpl{
+		target: target,
+		data:   &C.struct_element_pp_s{},
+	}
+	C.element_pp_init(power.data, target.impl().data)
 	runtime.SetFinalizer(power, clearPower)
+	return power
+}
+
+type Pairer interface {
+	Pair(target Element, x Element) Element
+}
+
+type pairerImpl struct {
+	source Element
+	data   *C.struct_pairing_pp_s
+}
+
+func (pairer *pairerImpl) Pair(target Element, x Element) Element {
+	return target.PairerPair(pairer, x)
+}
+
+func clearPairer(pairer *pairerImpl) {
+	println("clearpairer")
+	C.pairing_pp_clear(pairer.data)
+}
+
+func initPairer(source Element) Pairer {
+	pairer := &pairerImpl{
+		source: source,
+		data:   &C.struct_pairing_pp_s{},
+	}
+	C.pairing_pp_init(pairer.data, source.impl().data, source.impl().pairing.data)
+	runtime.SetFinalizer(pairer, clearPairer)
+	return pairer
 }
