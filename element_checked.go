@@ -5,7 +5,10 @@ package pbc
 */
 import "C"
 
-import "math/big"
+import (
+	"hash"
+	"math/big"
+)
 
 func (el *checkedElement) impl() *elementImpl { return &el.unchecked }
 
@@ -78,6 +81,11 @@ func (el *checkedElement) Set(src Element) Element {
 
 func (el *checkedElement) SetFromHash(hash []byte) Element {
 	el.unchecked.SetFromHash(hash)
+	return el
+}
+
+func (el *checkedElement) SetFromStringHash(s string, h hash.Hash) Element {
+	el.unchecked.SetFromStringHash(s, h)
 	return el
 }
 
@@ -158,6 +166,8 @@ func (el *checkedElement) Cmp(x Element) int {
 	el.checkCompatible(x)
 	return el.unchecked.Cmp(x)
 }
+
+func (el *checkedElement) Equals(x Element) bool { return el.unchecked.Equals(x) }
 
 func (el *checkedElement) Add(x Element, y Element) Element {
 	el.checkAllCompatible(x, y)

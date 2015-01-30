@@ -7,6 +7,7 @@ import "C"
 
 import (
 	"fmt"
+	"hash"
 	"math/big"
 	"runtime"
 )
@@ -21,6 +22,8 @@ type Element interface {
 	Set(Element) Element
 
 	SetFromHash([]byte) Element
+	SetFromStringHash(s string, h hash.Hash) Element
+
 	SetBytes([]byte) Element
 	SetXBytes([]byte) Element
 	SetCompressedBytes([]byte) Element
@@ -51,6 +54,7 @@ type Element interface {
 	Sign() int
 
 	Cmp(x Element) int
+	Equals(x Element) bool
 
 	Add(x, y Element) Element
 	Sub(x, y Element) Element

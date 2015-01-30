@@ -6,6 +6,7 @@ package pbc
 import "C"
 
 import (
+	"hash"
 	"math/big"
 	"unsafe"
 )
@@ -47,6 +48,14 @@ func (el *elementImpl) Set(src Element) Element {
 func (el *elementImpl) SetFromHash(hash []byte) Element {
 	C.element_from_hash(el.data, unsafe.Pointer(&hash[0]), C.int(len(hash)))
 	return el
+}
+
+func (el *elementImpl) SetFromStringHash(s string, h hash.Hash) Element {
+	h.Reset()
+	if _, err := h.Write([]byte(s)); err != nil {
+		panic(ErrHashFailure)
+	}
+	return el.SetFromHash(h.Sum([]byte{}))
 }
 
 func (el *elementImpl) SetBytes(buf []byte) Element {
@@ -170,6 +179,8 @@ func (el *elementImpl) Sign() int {
 func (el *elementImpl) Cmp(x Element) int {
 	return normalizeSign(int64(C.element_cmp(el.data, x.impl().data)))
 }
+
+func (el *elementImpl) Equals(x Element) bool { return el.Cmp(x) == 0 }
 
 func (el *elementImpl) Add(x, y Element) Element {
 	C.element_add(el.data, x.impl().data, y.impl().data)

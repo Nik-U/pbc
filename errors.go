@@ -14,5 +14,6 @@ var (
 	ErrIllegalNil         = errors.New("received nil when non-nil was expected")
 	ErrOutOfRange         = errors.New("index out of range")
 	ErrEntropyFailure     = errors.New("error while reading from entropy source")
+	ErrHashFailure        = errors.New("error while hashing data")
 	ErrInternal           = errors.New("a severe internal error has lead to possible memory corruption")
 )
