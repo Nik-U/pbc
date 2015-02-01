@@ -10,7 +10,24 @@ import (
 	"math/big"
 )
 
-func (el *checkedElement) impl() *elementImpl { return &el.unchecked }
+type checkedElement struct {
+	unchecked uncheckedElement
+	fieldPtr  *C.struct_field_s
+	isInteger bool
+}
+
+func makeChecked(pairing *pairingImpl, field Field, fieldPtr *C.struct_field_s) *checkedElement {
+	element := &checkedElement{
+		fieldPtr:  fieldPtr,
+		isInteger: field == Zr,
+	}
+	initUnchecked(&element.unchecked, pairing, true, field)
+	return element
+}
+
+func (el *checkedElement) data() *C.struct_element_s { return el.unchecked.d }
+
+func (el *checkedElement) Pairing() Pairing { return el.unchecked.pairing }
 
 func element2Checked(x Element) *checkedElement {
 	checked, ok := x.(*checkedElement)
@@ -46,8 +63,8 @@ func (el *checkedElement) checkInteger() {
 func (el *checkedElement) NewFieldElement() Element {
 	newElement := &checkedElement{}
 	*newElement = *el
-	initElement(&newElement.unchecked, el.unchecked.pairing, false, G1)
-	C.element_init_same_as(newElement.unchecked.data, el.unchecked.data)
+	initUnchecked(&newElement.unchecked, el.unchecked.pairing, false, G1)
+	C.element_init_same_as(newElement.unchecked.d, el.unchecked.d)
 	return newElement
 }
 
@@ -146,9 +163,9 @@ func (el *checkedElement) Item(i int) Element {
 	if i >= el.Len() {
 		panic(ErrOutOfRange)
 	}
-	uncheckedData := el.unchecked.Item(i).(*elementImpl)
+	uncheckedData := el.unchecked.Item(i).(*uncheckedElement)
 	item := &checkedElement{
-		fieldPtr:  uncheckedData.data.field,
+		fieldPtr:  uncheckedData.d.field,
 		isInteger: uncheckedData.Len() == 0,
 	}
 	item.unchecked = *uncheckedData
@@ -336,14 +353,14 @@ func (el *checkedElement) ProdPairSlice(x, y []Element) Element {
 
 func (el *checkedElement) PreparePairer() Pairer { return initPairer(el) }
 
-func (el *checkedElement) PairerPair(pairer Pairer, x Element) Element {
+func (el *checkedElement) PairerPair(pairer Pairer, y Element) Element {
 	in1 := element2Checked(pairer.(*pairerImpl).source)
-	in2 := element2Checked(x)
+	in2 := element2Checked(y)
 	pairing := el.unchecked.pairing.data
 	checkFieldsMatch(in1.fieldPtr, pairing.G1)
 	checkFieldsMatch(in2.fieldPtr, pairing.G2)
 	checkFieldsMatch(el.fieldPtr, &pairing.GT[0])
-	el.unchecked.PairerPair(pairer, x)
+	el.unchecked.PairerPair(pairer, y)
 	return el
 }
 

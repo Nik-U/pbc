@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrInvalidParamString = errors.New("invalid pairing parameters")
+	ErrNoSuitableCurves   = errors.New("no suitable curves were found")
 	ErrUnknownField       = errors.New("unchecked element initialized in unknown field")
 	ErrIllegalOp          = errors.New("operation is illegal for elements of this type")
 	ErrUncheckedOp        = errors.New("unchecked element passed to checked operation")

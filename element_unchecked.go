@@ -8,49 +8,87 @@ import "C"
 import (
 	"hash"
 	"math/big"
+	"runtime"
 	"unsafe"
 )
 
-func (el *elementImpl) impl() *elementImpl { return el }
+type uncheckedElement struct {
+	pairing *pairingImpl
+	d       *C.struct_element_s
+}
 
-func (el *elementImpl) NewFieldElement() Element {
-	newElement := &elementImpl{}
-	initElement(newElement, el.pairing, false, G1)
-	C.element_init_same_as(newElement.data, el.data)
+func clearUnchecked(element *uncheckedElement) {
+	C.element_clear(element.d)
+}
+
+func initUnchecked(element *uncheckedElement, pairing *pairingImpl, initialize bool, field Field) {
+	element.d = &C.struct_element_s{}
+	element.pairing = pairing
+	if initialize {
+		switch field {
+		case G1:
+			C.element_init_G1(element.d, pairing.data)
+		case G2:
+			C.element_init_G2(element.d, pairing.data)
+		case GT:
+			C.element_init_GT(element.d, pairing.data)
+		case Zr:
+			C.element_init_Zr(element.d, pairing.data)
+		default:
+			panic(ErrUnknownField)
+		}
+	}
+	runtime.SetFinalizer(element, clearUnchecked)
+}
+
+func makeUnchecked(pairing *pairingImpl, field Field) *uncheckedElement {
+	element := &uncheckedElement{}
+	initUnchecked(element, pairing, true, field)
+	return element
+}
+
+func (el *uncheckedElement) data() *C.struct_element_s { return el.d }
+
+func (el *uncheckedElement) Pairing() Pairing { return el.pairing }
+
+func (el *uncheckedElement) NewFieldElement() Element {
+	newElement := &uncheckedElement{}
+	initUnchecked(newElement, el.pairing, false, G1)
+	C.element_init_same_as(newElement.d, el.d)
 	return newElement
 }
 
-func (el *elementImpl) Set0() Element {
-	C.element_set0(el.data)
+func (el *uncheckedElement) Set0() Element {
+	C.element_set0(el.d)
 	return el
 }
 
-func (el *elementImpl) Set1() Element {
-	C.element_set1(el.data)
+func (el *uncheckedElement) Set1() Element {
+	C.element_set1(el.d)
 	return el
 }
 
-func (el *elementImpl) SetInt32(i int32) Element {
-	C.element_set_si(el.data, C.long(i))
+func (el *uncheckedElement) SetInt32(i int32) Element {
+	C.element_set_si(el.d, C.long(i))
 	return el
 }
 
-func (el *elementImpl) SetBig(i *big.Int) Element {
-	C.element_set_mpz(el.data, &big2mpz(i)[0])
+func (el *uncheckedElement) SetBig(i *big.Int) Element {
+	C.element_set_mpz(el.d, &big2mpz(i)[0])
 	return el
 }
 
-func (el *elementImpl) Set(src Element) Element {
-	C.element_set(el.data, src.impl().data)
+func (el *uncheckedElement) Set(src Element) Element {
+	C.element_set(el.d, src.data())
 	return el
 }
 
-func (el *elementImpl) SetFromHash(hash []byte) Element {
-	C.element_from_hash(el.data, unsafe.Pointer(&hash[0]), C.int(len(hash)))
+func (el *uncheckedElement) SetFromHash(hash []byte) Element {
+	C.element_from_hash(el.d, unsafe.Pointer(&hash[0]), C.int(len(hash)))
 	return el
 }
 
-func (el *elementImpl) SetFromStringHash(s string, h hash.Hash) Element {
+func (el *uncheckedElement) SetFromStringHash(s string, h hash.Hash) Element {
 	h.Reset()
 	if _, err := h.Write([]byte(s)); err != nil {
 		panic(ErrHashFailure)
@@ -58,108 +96,108 @@ func (el *elementImpl) SetFromStringHash(s string, h hash.Hash) Element {
 	return el.SetFromHash(h.Sum([]byte{}))
 }
 
-func (el *elementImpl) SetBytes(buf []byte) Element {
-	C.element_from_bytes(el.data, (*C.uchar)(unsafe.Pointer(&buf[0])))
+func (el *uncheckedElement) SetBytes(buf []byte) Element {
+	C.element_from_bytes(el.d, (*C.uchar)(unsafe.Pointer(&buf[0])))
 	return el
 }
 
-func (el *elementImpl) SetXBytes(buf []byte) Element {
-	C.element_from_bytes_x_only(el.data, (*C.uchar)(unsafe.Pointer(&buf[0])))
+func (el *uncheckedElement) SetXBytes(buf []byte) Element {
+	C.element_from_bytes_x_only(el.d, (*C.uchar)(unsafe.Pointer(&buf[0])))
 	return el
 }
 
-func (el *elementImpl) SetCompressedBytes(buf []byte) Element {
-	C.element_from_bytes_compressed(el.data, (*C.uchar)(unsafe.Pointer(&buf[0])))
+func (el *uncheckedElement) SetCompressedBytes(buf []byte) Element {
+	C.element_from_bytes_compressed(el.d, (*C.uchar)(unsafe.Pointer(&buf[0])))
 	return el
 }
 
-func (el *elementImpl) SetString(s string, base int) (Element, bool) {
+func (el *uncheckedElement) SetString(s string, base int) (Element, bool) {
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
 
-	if ok := C.element_set_str(el.data, cstr, C.int(base)); ok == 0 {
+	if ok := C.element_set_str(el.d, cstr, C.int(base)); ok == 0 {
 		return nil, false
 	}
 	return el, true
 }
 
-func (el *elementImpl) BigInt() *big.Int {
+func (el *uncheckedElement) BigInt() *big.Int {
 	mpz := newMpz()
-	C.element_to_mpz(&mpz[0], el.data)
+	C.element_to_mpz(&mpz[0], el.d)
 	return mpz2big(mpz)
 }
 
-func (el *elementImpl) BytesLen() int {
-	return int(C.element_length_in_bytes(el.data))
+func (el *uncheckedElement) BytesLen() int {
+	return int(C.element_length_in_bytes(el.d))
 }
 
-func (el *elementImpl) writeBytes(buf []byte) C.int {
-	return C.element_to_bytes((*C.uchar)(unsafe.Pointer(&buf[0])), el.data)
+func (el *uncheckedElement) writeBytes(buf []byte) C.int {
+	return C.element_to_bytes((*C.uchar)(unsafe.Pointer(&buf[0])), el.d)
 }
 
-func (el *elementImpl) Bytes() []byte {
+func (el *uncheckedElement) Bytes() []byte {
 	buf := make([]byte, el.BytesLen())
 	el.writeBytes(buf)
 	return buf
 }
 
-func (el *elementImpl) XBytesLen() int {
-	return int(C.element_length_in_bytes_x_only(el.data))
+func (el *uncheckedElement) XBytesLen() int {
+	return int(C.element_length_in_bytes_x_only(el.d))
 }
 
-func (el *elementImpl) writeXBytes(buf []byte) C.int {
-	return C.element_to_bytes_x_only((*C.uchar)(unsafe.Pointer(&buf[0])), el.data)
+func (el *uncheckedElement) writeXBytes(buf []byte) C.int {
+	return C.element_to_bytes_x_only((*C.uchar)(unsafe.Pointer(&buf[0])), el.d)
 }
 
-func (el *elementImpl) XBytes() []byte {
+func (el *uncheckedElement) XBytes() []byte {
 	buf := make([]byte, el.XBytesLen())
 	el.writeXBytes(buf)
 	return buf
 }
 
-func (el *elementImpl) CompressedBytesLen() int {
-	return int(C.element_length_in_bytes_compressed(el.data))
+func (el *uncheckedElement) CompressedBytesLen() int {
+	return int(C.element_length_in_bytes_compressed(el.d))
 }
 
-func (el *elementImpl) writeCompressedBytes(buf []byte) C.int {
-	return C.element_to_bytes_compressed((*C.uchar)(unsafe.Pointer(&buf[0])), el.data)
+func (el *uncheckedElement) writeCompressedBytes(buf []byte) C.int {
+	return C.element_to_bytes_compressed((*C.uchar)(unsafe.Pointer(&buf[0])), el.d)
 }
 
-func (el *elementImpl) CompressedBytes() []byte {
+func (el *uncheckedElement) CompressedBytes() []byte {
 	buf := make([]byte, el.CompressedBytesLen())
 	el.writeCompressedBytes(buf)
 	return buf
 }
 
-func (el *elementImpl) Len() int {
-	return int(C.element_item_count(el.data))
+func (el *uncheckedElement) Len() int {
+	return int(C.element_item_count(el.d))
 }
 
-func (el *elementImpl) Item(i int) Element {
-	return &elementImpl{
+func (el *uncheckedElement) Item(i int) Element {
+	return &uncheckedElement{
 		pairing: el.pairing,
-		data:    C.element_item(el.data, C.int(i)),
+		d:       C.element_item(el.d, C.int(i)),
 	}
 }
 
-func (el *elementImpl) X() *big.Int {
+func (el *uncheckedElement) X() *big.Int {
 	return el.Item(0).BigInt()
 }
 
-func (el *elementImpl) Y() *big.Int {
+func (el *uncheckedElement) Y() *big.Int {
 	return el.Item(1).BigInt()
 }
 
-func (el *elementImpl) Is0() bool {
-	return C.element_is0(el.data) != 0
+func (el *uncheckedElement) Is0() bool {
+	return C.element_is0(el.d) != 0
 }
 
-func (el *elementImpl) Is1() bool {
-	return C.element_is1(el.data) != 0
+func (el *uncheckedElement) Is1() bool {
+	return C.element_is1(el.d) != 0
 }
 
-func (el *elementImpl) IsSquare() bool {
-	return C.element_is_sqr(el.data) != 0
+func (el *uncheckedElement) IsSquare() bool {
+	return C.element_is_sqr(el.d) != 0
 }
 
 func normalizeSign(sign int64) int {
@@ -172,131 +210,131 @@ func normalizeSign(sign int64) int {
 	return 0
 }
 
-func (el *elementImpl) Sign() int {
-	return normalizeSign(int64(C.element_sign(el.data)))
+func (el *uncheckedElement) Sign() int {
+	return normalizeSign(int64(C.element_sign(el.d)))
 }
 
-func (el *elementImpl) Cmp(x Element) int {
-	return normalizeSign(int64(C.element_cmp(el.data, x.impl().data)))
+func (el *uncheckedElement) Cmp(x Element) int {
+	return normalizeSign(int64(C.element_cmp(el.d, x.data())))
 }
 
-func (el *elementImpl) Equals(x Element) bool { return el.Cmp(x) == 0 }
+func (el *uncheckedElement) Equals(x Element) bool { return el.Cmp(x) == 0 }
 
-func (el *elementImpl) Add(x, y Element) Element {
-	C.element_add(el.data, x.impl().data, y.impl().data)
+func (el *uncheckedElement) Add(x, y Element) Element {
+	C.element_add(el.d, x.data(), y.data())
 	return el
 }
 
-func (el *elementImpl) Sub(x, y Element) Element {
-	C.element_sub(el.data, x.impl().data, y.impl().data)
+func (el *uncheckedElement) Sub(x, y Element) Element {
+	C.element_sub(el.d, x.data(), y.data())
 	return el
 }
 
-func (el *elementImpl) Mul(x, y Element) Element {
-	C.element_mul(el.data, x.impl().data, y.impl().data)
+func (el *uncheckedElement) Mul(x, y Element) Element {
+	C.element_mul(el.d, x.data(), y.data())
 	return el
 }
 
-func (el *elementImpl) MulBig(x Element, i *big.Int) Element {
-	C.element_mul_mpz(el.data, x.impl().data, &big2mpz(i)[0])
+func (el *uncheckedElement) MulBig(x Element, i *big.Int) Element {
+	C.element_mul_mpz(el.d, x.data(), &big2mpz(i)[0])
 	return el
 }
 
-func (el *elementImpl) MulInt32(x Element, i int32) Element {
-	C.element_mul_si(el.data, x.impl().data, C.long(i))
+func (el *uncheckedElement) MulInt32(x Element, i int32) Element {
+	C.element_mul_si(el.d, x.data(), C.long(i))
 	return el
 }
 
-func (el *elementImpl) MulZn(x, y Element) Element {
-	C.element_mul_zn(el.data, x.impl().data, y.impl().data)
+func (el *uncheckedElement) MulZn(x, y Element) Element {
+	C.element_mul_zn(el.d, x.data(), y.data())
 	return el
 }
 
-func (el *elementImpl) Div(x, y Element) Element {
-	C.element_div(el.data, x.impl().data, y.impl().data)
+func (el *uncheckedElement) Div(x, y Element) Element {
+	C.element_div(el.d, x.data(), y.data())
 	return el
 }
 
-func (el *elementImpl) Double(x Element) Element {
-	C.element_double(el.data, x.impl().data)
+func (el *uncheckedElement) Double(x Element) Element {
+	C.element_double(el.d, x.data())
 	return el
 }
 
-func (el *elementImpl) Halve(x Element) Element {
-	C.element_halve(el.data, x.impl().data)
+func (el *uncheckedElement) Halve(x Element) Element {
+	C.element_halve(el.d, x.data())
 	return el
 }
 
-func (el *elementImpl) Square(x Element) Element {
-	C.element_square(el.data, x.impl().data)
+func (el *uncheckedElement) Square(x Element) Element {
+	C.element_square(el.d, x.data())
 	return el
 }
 
-func (el *elementImpl) Neg(x Element) Element {
-	C.element_neg(el.data, x.impl().data)
+func (el *uncheckedElement) Neg(x Element) Element {
+	C.element_neg(el.d, x.data())
 	return el
 }
 
-func (el *elementImpl) Invert(x Element) Element {
-	C.element_invert(el.data, x.impl().data)
+func (el *uncheckedElement) Invert(x Element) Element {
+	C.element_invert(el.d, x.data())
 	return el
 }
 
-func (el *elementImpl) PowBig(x Element, i *big.Int) Element {
-	C.element_pow_mpz(el.data, x.impl().data, &big2mpz(i)[0])
+func (el *uncheckedElement) PowBig(x Element, i *big.Int) Element {
+	C.element_pow_mpz(el.d, x.data(), &big2mpz(i)[0])
 	return el
 }
 
-func (el *elementImpl) PowZn(x, i Element) Element {
-	C.element_pow_zn(el.data, x.impl().data, i.impl().data)
+func (el *uncheckedElement) PowZn(x, i Element) Element {
+	C.element_pow_zn(el.d, x.data(), i.data())
 	return el
 }
 
-func (el *elementImpl) Pow2Big(x Element, i *big.Int, y Element, j *big.Int) Element {
-	C.element_pow2_mpz(el.data, x.impl().data, &big2mpz(i)[0], y.impl().data, &big2mpz(j)[0])
+func (el *uncheckedElement) Pow2Big(x Element, i *big.Int, y Element, j *big.Int) Element {
+	C.element_pow2_mpz(el.d, x.data(), &big2mpz(i)[0], y.data(), &big2mpz(j)[0])
 	return el
 }
 
-func (el *elementImpl) Pow2Zn(x, i, y, j Element) Element {
-	C.element_pow2_zn(el.data, x.impl().data, i.impl().data, y.impl().data, j.impl().data)
+func (el *uncheckedElement) Pow2Zn(x, i, y, j Element) Element {
+	C.element_pow2_zn(el.d, x.data(), i.data(), y.data(), j.data())
 	return el
 }
 
-func (el *elementImpl) Pow3Big(x Element, i *big.Int, y Element, j *big.Int, z Element, k *big.Int) Element {
-	C.element_pow3_mpz(el.data, x.impl().data, &big2mpz(i)[0], y.impl().data, &big2mpz(j)[0], z.impl().data, &big2mpz(k)[0])
+func (el *uncheckedElement) Pow3Big(x Element, i *big.Int, y Element, j *big.Int, z Element, k *big.Int) Element {
+	C.element_pow3_mpz(el.d, x.data(), &big2mpz(i)[0], y.data(), &big2mpz(j)[0], z.data(), &big2mpz(k)[0])
 	return el
 }
 
-func (el *elementImpl) Pow3Zn(x, i, y, j, z, k Element) Element {
-	C.element_pow3_zn(el.data, x.impl().data, i.impl().data, y.impl().data, j.impl().data, z.impl().data, k.impl().data)
+func (el *uncheckedElement) Pow3Zn(x, i, y, j, z, k Element) Element {
+	C.element_pow3_zn(el.d, x.data(), i.data(), y.data(), j.data(), z.data(), k.data())
 	return el
 }
 
-func (el *elementImpl) PreparePower() Power { return initPower(el) }
+func (el *uncheckedElement) PreparePower() Power { return initPower(el) }
 
-func (el *elementImpl) PowerBig(power Power, i *big.Int) Element {
-	C.element_pp_pow(el.data, &big2mpz(i)[0], power.(*powerImpl).data)
+func (el *uncheckedElement) PowerBig(power Power, i *big.Int) Element {
+	C.element_pp_pow(el.d, &big2mpz(i)[0], power.(*powerImpl).data)
 	return el
 }
 
-func (el *elementImpl) PowerZn(power Power, i Element) Element {
-	C.element_pp_pow_zn(el.data, i.impl().data, power.(*powerImpl).data)
+func (el *uncheckedElement) PowerZn(power Power, i Element) Element {
+	C.element_pp_pow_zn(el.d, i.data(), power.(*powerImpl).data)
 	return el
 }
 
-func (el *elementImpl) Pair(x, y Element) Element {
-	C.pairing_apply(el.data, x.impl().data, y.impl().data, el.pairing.data)
+func (el *uncheckedElement) Pair(x, y Element) Element {
+	C.pairing_apply(el.d, x.data(), y.data(), el.pairing.data)
 	return el
 }
 
-func (el *elementImpl) doProdPair(in1, in2 []C.struct_element_s) Element {
+func (el *uncheckedElement) doProdPair(in1, in2 []C.struct_element_s) Element {
 	x := (*C.element_t)(unsafe.Pointer(&in1[0]))
 	y := (*C.element_t)(unsafe.Pointer(&in2[0]))
-	C.element_prod_pairing(el.data, x, y, C.int(len(in1)))
+	C.element_prod_pairing(el.d, x, y, C.int(len(in1)))
 	return el
 }
 
-func (el *elementImpl) ProdPair(elements ...Element) Element {
+func (el *uncheckedElement) ProdPair(elements ...Element) Element {
 	n := len(elements)
 	if n%2 != 0 {
 		panic(ErrBadPairList)
@@ -305,13 +343,13 @@ func (el *elementImpl) ProdPair(elements ...Element) Element {
 	in1 := make([]C.struct_element_s, half)
 	in2 := make([]C.struct_element_s, half)
 	for i, j := 0, 0; j < n; i, j = i+1, j+2 {
-		in1[i] = *elements[j].impl().data
-		in2[i] = *elements[j+1].impl().data
+		in1[i] = *elements[j].data()
+		in2[i] = *elements[j+1].data()
 	}
 	return el.doProdPair(in1, in2)
 }
 
-func (el *elementImpl) ProdPairSlice(x, y []Element) Element {
+func (el *uncheckedElement) ProdPairSlice(x, y []Element) Element {
 	n := len(x)
 	if n != len(y) {
 		panic(ErrBadPairList)
@@ -319,30 +357,30 @@ func (el *elementImpl) ProdPairSlice(x, y []Element) Element {
 	in1 := make([]C.struct_element_s, n)
 	in2 := make([]C.struct_element_s, n)
 	for i := 0; i < n; i++ {
-		in1[i] = *x[i].impl().data
-		in2[i] = *y[i].impl().data
+		in1[i] = *x[i].data()
+		in2[i] = *y[i].data()
 	}
 	return el.doProdPair(in1, in2)
 }
 
-func (el *elementImpl) PreparePairer() Pairer { return initPairer(el) }
+func (el *uncheckedElement) PreparePairer() Pairer { return initPairer(el) }
 
-func (el *elementImpl) PairerPair(pairer Pairer, x Element) Element {
-	C.pairing_pp_apply(el.data, x.impl().data, pairer.(*pairerImpl).data)
+func (el *uncheckedElement) PairerPair(pairer Pairer, y Element) Element {
+	C.pairing_pp_apply(el.d, y.data(), pairer.(*pairerImpl).data)
 	return el
 }
 
-func (el *elementImpl) BruteForceDL(g, h Element) Element {
-	C.element_dlog_brute_force(el.data, g.impl().data, h.impl().data)
+func (el *uncheckedElement) BruteForceDL(g, h Element) Element {
+	C.element_dlog_brute_force(el.d, g.data(), h.data())
 	return el
 }
 
-func (el *elementImpl) PollardRhoDL(g, h Element) Element {
-	C.element_dlog_pollard_rho(el.data, g.impl().data, h.impl().data)
+func (el *uncheckedElement) PollardRhoDL(g, h Element) Element {
+	C.element_dlog_pollard_rho(el.d, g.data(), h.data())
 	return el
 }
 
-func (el *elementImpl) Rand() Element {
-	C.element_random(el.data)
+func (el *uncheckedElement) Rand() Element {
+	C.element_random(el.d)
 	return el
 }

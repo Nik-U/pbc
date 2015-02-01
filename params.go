@@ -15,10 +15,16 @@ import "C"
 
 import (
 	"io"
+	"io/ioutil"
 	"runtime"
 	"unsafe"
 )
 
+// Params represents the parameters required for creating a pairing. Parameters
+// cn be generated using the generation functions or read from a Reader.
+// Normally, parameters are generated once using a generation program and then
+// distributed with the final application. Parameters can be exported for this
+// purpose using the WriteTo or String methods.
 type Params interface {
 	NewPairing() Pairing
 	WriteTo(w io.Writer) (n int64, err error)
@@ -29,6 +35,16 @@ type paramsImpl struct {
 	data *C.struct_pbc_param_s
 }
 
+// NewParams loads pairing parameters from a Reader.
+func NewParams(r io.Reader) (Params, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return NewParamsFromString(string(b))
+}
+
+// NewParamsFromString loads pairing parameters from a string.
 func NewParamsFromString(s string) (Params, error) {
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
@@ -40,8 +56,9 @@ func NewParamsFromString(s string) (Params, error) {
 	return params, nil
 }
 
+// NewPairing creates a Pairing using these parameters.
 func (params *paramsImpl) NewPairing() Pairing {
-	return NewPairingFromParams(params)
+	return NewPairing(params)
 }
 
 func (params *paramsImpl) WriteTo(w io.Writer) (n int64, err error) {
@@ -61,7 +78,6 @@ func (params *paramsImpl) String() string {
 }
 
 func clearParams(params *paramsImpl) {
-	println("clearparams")
 	C.pbc_param_clear(params.data)
 }
 

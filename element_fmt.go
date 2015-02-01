@@ -20,11 +20,11 @@ import (
 	"unsafe"
 )
 
-func (el *elementImpl) errorFormat(f fmt.State, c rune, err string) {
+func (el *uncheckedElement) errorFormat(f fmt.State, c rune, err string) {
 	fmt.Fprintf(f, "%%!%c(%s pbc.Element)", c, err)
 }
 
-func (el *elementImpl) nativeFormat(f fmt.State, c rune) {
+func (el *uncheckedElement) nativeFormat(f fmt.State, c rune) {
 	base := 10
 	if width, ok := f.Width(); ok {
 		if width < 2 || width > 36 {
@@ -35,7 +35,7 @@ func (el *elementImpl) nativeFormat(f fmt.State, c rune) {
 	}
 	var buf *C.char
 	var bufLen C.size_t
-	if C.element_out_str_wrapper(&buf, &bufLen, C.int(base), el.data) == 0 {
+	if C.element_out_str_wrapper(&buf, &bufLen, C.int(base), el.d) == 0 {
 		el.errorFormat(f, c, "INTERNALERROR")
 		return
 	}
@@ -44,14 +44,14 @@ func (el *elementImpl) nativeFormat(f fmt.State, c rune) {
 	fmt.Fprintf(f, "%s", str)
 }
 
-func (el *elementImpl) customFormat(f fmt.State, c rune) {
+func (el *uncheckedElement) customFormat(f fmt.State, c rune) {
 	count := el.Len()
 	if count == 0 {
 		el.BigInt().Format(f, c)
 	} else {
 		fmt.Fprintf(f, "[")
 		for i := 0; i < count; i++ {
-			el.Item(i).impl().customFormat(f, c)
+			el.Item(i).(*uncheckedElement).customFormat(f, c)
 			if i+1 < count {
 				fmt.Fprintf(f, ", ")
 			}
@@ -60,7 +60,7 @@ func (el *elementImpl) customFormat(f fmt.State, c rune) {
 	}
 }
 
-func (el *elementImpl) Format(f fmt.State, c rune) {
+func (el *uncheckedElement) Format(f fmt.State, c rune) {
 	switch c {
 	case 'v':
 		if f.Flag('#') {
@@ -85,13 +85,13 @@ func (el *checkedElement) Format(f fmt.State, c rune) {
 	}
 }
 
-func (el *elementImpl) String() string {
+func (el *uncheckedElement) String() string {
 	return fmt.Sprintf("%s", el)
 }
 
 func (el *checkedElement) String() string { return el.unchecked.String() }
 
-func (el *elementImpl) Scan(state fmt.ScanState, verb rune) error {
+func (el *uncheckedElement) Scan(state fmt.ScanState, verb rune) error {
 	if verb != 's' && verb != 'v' {
 		return ErrBadVerb
 	}
