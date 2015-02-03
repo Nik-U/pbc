@@ -60,6 +60,19 @@ func (el *Element) customFormat(f fmt.State, c rune) {
 	}
 }
 
+// Format is a support routine for fmt.Formatter. It accepts many formats. The
+// 'v' (value) and 's' (string) verbs will format the Element using the PBC
+// library's internal formatting routines. These verbs accept variable widths
+// to specify the base of the integers. Valid values are 2 to 36, inclusive.
+//
+// If the 'v' verb is used with the '#' (alternate format) flag, the output is
+// metadata about the element in a pseudo-Go syntax. Checked elements will
+// print more information than unchecked elements in this mode.
+//
+// If the 'd', 'b', 'o', 'x', or 'X' verbs are used, then the element is
+// formatted within Go. The syntax approximates the PBC library's formatting,
+// but integers are converted to big.Int for formatting. All of the verbs and
+// flags that can be used in math/big will be used to format the elements.
 func (el *Element) Format(f fmt.State, c rune) {
 	switch c {
 	case 'v':
@@ -81,10 +94,14 @@ func (el *Element) Format(f fmt.State, c rune) {
 	}
 }
 
+// String converts el to a string using the default PBC library format.
 func (el *Element) String() string {
 	return fmt.Sprintf("%s", el)
 }
 
+// SetString sets el to the value contained in s. Returns (el, true) if
+// successful, and (nil, false) if an error occurs. s is expected to be in the
+// same format produced by String().
 func (el *Element) SetString(s string, base int) (*Element, bool) {
 	cstr := C.CString(s)
 	defer C.free(unsafe.Pointer(cstr))
@@ -95,16 +112,24 @@ func (el *Element) SetString(s string, base int) (*Element, bool) {
 	return el, true
 }
 
+// Scan is a support routine for fmt.Scanner. It accepts the verbs 's' and 'v'
+// only; only strings produced in PBC library format can be scanned. The width
+// is used to denote the base of integers in the data.
 func (el *Element) Scan(state fmt.ScanState, verb rune) error {
+	// Verify verbs
 	if verb != 's' && verb != 'v' {
 		return ErrBadVerb
 	}
+
+	// Verify base
 	base, ok := state.Width()
 	if !ok {
 		base = 10
 	} else if base < 2 || base > 36 {
 		return ErrBadVerb
 	}
+
+	// Compute valid integer symbols
 	maxDigit := '9'
 	maxAlpha := 'z'
 	if base < 10 {
@@ -115,6 +140,9 @@ func (el *Element) Scan(state fmt.ScanState, verb rune) error {
 	}
 
 	state.SkipSpace()
+
+	// Validate the input using a state machine (passing PBC invalid input is
+	// likely to lead to bad outcomes)
 
 	tokensFound := make([]uint, 0, 5)
 	inToken := false
@@ -176,6 +204,8 @@ ReadLoop:
 		}
 		justDescended = (r == ']')
 	}
+
+	// The string seems valid; pass it to PBC
 	if _, ok := el.SetString(buf.String(), base); !ok {
 		return ErrBadInput
 	}

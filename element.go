@@ -4,8 +4,65 @@ package pbc
 #include <pbc/pbc.h>
 */
 import "C"
+
 import "runtime"
 
+// Element represents an element in one of the algebraic structures associated
+// with a pairing. Arithmetic operations can be performed on elements to
+// complete computations. Elements can also be paired using the associated
+// pairing's bilinear map. Elements can be exported or imported in a variety of
+// formats.
+//
+// The arithmetic methods for Elements generally follow the style of big.Int. A
+// typical operation has a signature like this:
+//
+// 	func (el *Element) Add(x, y *Element) *Element
+//
+// This method stores x + y in el and returns el. Since these arithmetic
+// operations return the targets, they can be used in method chaining:
+//
+// 	x.Add(a, b).Mul(x, c).Square(x)
+//
+// This assigns x = ((a+b)*c)^2.
+//
+// Whenever possible, the methods defined on Element use the same names as
+// those in the math/big package.
+//
+// The addition and multiplication functions perform addition and
+// multiplication operations in rings and fields. For groups of points on an
+// elliptic curve, such as the G1 and G2 groups associated with pairings, both
+// addition and multiplication represent the group operation (and similarly
+// both 0 and 1 represent the identity element). It is recommended that
+// programs choose one convention and stick with it to avoid confusion.
+//
+// Not all operations are valid for all elements. For example, pairing
+// operations require an element from G1, and element from G2, and a target
+// from GT. As another example, elements in a ring cannot be inverted in
+// general.
+//
+// The PBC library does not attempt to detect invalid element operations. If an
+// invalid operation is performed, several outcomes are possible. In the best
+// case, the operation will be treated as a no-op. The target element might
+// be set to a nonsensical value. In the worst case, the program may segfault.
+//
+// The pbc wrapper provides some protection against invalid operations. When
+// elements are initialized by a Pairing, they can either be created as checked
+// or unchecked. Unchecked elements do not perform any sanity checks; calls are
+// passed directly to the C library, with the possible consequences mentioned
+// above. Checked elements attempt to catch a variety of errors, such as when
+// elements from mismatched algebraic structures or pairings. If an error is
+// detected, the operation will panic with ErrIllegalOp, ErrUncheckedOp,
+// ErrIncompatible, or a similar error.
+//
+// The decision on whether or not to check operations is based solely on
+// whether or not the target element is checked. Thus, if an unchecked element
+// is passed a checked element as part of an operation, the operation will not
+// be checked. Checked elements expect that all arguments to their methods are
+// also checked, and will panic with ErrUncheckedOp if not.
+//
+// Note that not all possible errors can be detected by checked elements;
+// ultimately, it is the responsibility of the caller to ensure that the
+// requested computations make sense.
 type Element struct {
 	pairing *Pairing // Prevents garbage collection
 	cptr    *C.struct_element_s
@@ -47,6 +104,7 @@ func makeCheckedElement(pairing *Pairing, field Field, fieldPtr *C.struct_field_
 	element.checked = true
 	element.fieldPtr = fieldPtr
 	element.isInteger = (field == Zr)
+	element.Set0()
 	return element
 }
 
@@ -76,6 +134,13 @@ func (el *Element) checkAllCompatible(elements ...*Element) {
 func (el *Element) checkInteger() {
 	el.ensureChecked()
 	if !el.isInteger {
+		panic(ErrIllegalOp)
+	}
+}
+
+func (el *Element) checkPoint() {
+	el.ensureChecked()
+	if el.isInteger {
 		panic(ErrIllegalOp)
 	}
 }

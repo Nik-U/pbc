@@ -61,7 +61,7 @@
 
 		sudo yum install gmp
 
-	For installation with FINK (http://www.finkproject.org/) on Mac OS X:
+	For installation with Fink (http://www.finkproject.org/) on Mac OS X:
 
 		sudo fink install gmp gmp-shlibs
 

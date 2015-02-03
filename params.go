@@ -21,10 +21,17 @@ import (
 )
 
 // Params represents the parameters required for creating a pairing. Parameters
-// cn be generated using the generation functions or read from a Reader.
+// can be generated using the generation functions or read from a Reader.
 // Normally, parameters are generated once using a generation program and then
 // distributed with the final application. Parameters can be exported for this
 // purpose using the WriteTo or String methods.
+//
+// For applications requiring fast computation, type A pairings are preferred.
+// Applications requiring small message sizes should consider type D pairings.
+// If speed is not a concern, type F pairings yield the smallest messages at
+// the cost of additional computation. Applications requiring symmetric
+// pairings should use type A. If a specific group order must be used (e.g.,
+// for composite orders), then type A1 pairings are required.
 type Params struct {
 	cptr *C.struct_pbc_param_s
 }
@@ -55,11 +62,13 @@ func (params *Params) NewPairing() *Pairing {
 	return NewPairing(params)
 }
 
+// WriteTo writes the pairing parameters to a Writer.
 func (params *Params) WriteTo(w io.Writer) (n int64, err error) {
 	count, err := io.WriteString(w, params.String())
 	return int64(count), err
 }
 
+// String returns a string representation of the pairing parameters.
 func (params *Params) String() string {
 	var buf *C.char
 	var bufLen C.size_t

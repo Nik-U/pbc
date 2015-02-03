@@ -25,10 +25,8 @@ const (
 
 // Pairing represents a pairing and its associated groups. The primary use of a
 // pairing object is the initialization of group elements. Elements can be
-// created in G1, G2, GT, or Zr. Additionally, elements can either be checked
-// or unchecked. Unchecked elements are slightly faster, but do not check to
-// ensure that operations make sense. Checked elements defend against a variety
-// of errors. For more details, see the Element documentation.
+// created in G1, G2, GT, or Zr. Additionally, elements can be checked or
+// unchecked. See the Element type for more details.
 type Pairing struct {
 	cptr *C.struct_pairing_s
 }
@@ -63,55 +61,71 @@ func (pairing *Pairing) IsSymmetric() bool {
 	return C.pairing_is_symmetric(pairing.cptr) != 0
 }
 
+// G1Length returns the size of elements in G1, in bytes.
 func (pairing *Pairing) G1Length() uint {
 	return uint(C.pairing_length_in_bytes_G1(pairing.cptr))
 }
 
+// G1XLength returns the size of X coordinates of elements in G1, in bytes.
 func (pairing *Pairing) G1XLength() uint {
 	return uint(C.pairing_length_in_bytes_x_only_G1(pairing.cptr))
 }
 
+// G1CompressedLength returns the size of compressed elements in G1, in bytes.
 func (pairing *Pairing) G1CompressedLength() uint {
 	return uint(C.pairing_length_in_bytes_compressed_G1(pairing.cptr))
 }
 
+// G2Length returns the size of elements in G2, in bytes.
 func (pairing *Pairing) G2Length() uint {
 	return uint(C.pairing_length_in_bytes_G2(pairing.cptr))
 }
 
+// G2XLength returns the size of X coordinates of elements in G2, in bytes.
 func (pairing *Pairing) G2XLength() uint {
 	return uint(C.pairing_length_in_bytes_x_only_G2(pairing.cptr))
 }
 
+// G2CompressedLength returns the size of compressed elements in G2, in bytes.
 func (pairing *Pairing) G2CompressedLength() uint {
 	return uint(C.pairing_length_in_bytes_compressed_G2(pairing.cptr))
 }
 
+// GTLength returns the size of elements in GT, in bytes.
 func (pairing *Pairing) GTLength() uint {
 	return uint(C.pairing_length_in_bytes_GT(pairing.cptr))
 }
 
+// ZrLength returns the size of elements in Zr, in bytes.
 func (pairing *Pairing) ZrLength() uint {
 	return uint(C.pairing_length_in_bytes_Zr(pairing.cptr))
 }
 
+// NewG1 creates a new checked element in G1.
 func (pairing *Pairing) NewG1() *Element {
 	return makeCheckedElement(pairing, G1, pairing.cptr.G1)
 }
 
+// NewG2 creates a new checked element in G2.
 func (pairing *Pairing) NewG2() *Element {
 	return makeCheckedElement(pairing, G2, pairing.cptr.G2)
 }
 
+// NewGT creates a new checked element in GT.
 func (pairing *Pairing) NewGT() *Element {
 	return makeCheckedElement(pairing, GT, &pairing.cptr.GT[0])
 }
 
+// NewZr creates a new checked element in Zr.
 func (pairing *Pairing) NewZr() *Element {
 	return makeCheckedElement(pairing, Zr, &pairing.cptr.Zr[0])
 }
 
-func (pairing *Pairing) NewElement(field Field) *Element {
+// NewUncheckedElement creates a new unchecked element in the target field.
+// Unchecked elements are dangerous; see the Element documentation before
+// deciding to use this method. It is safer to create elements using the NewG1,
+// NewG2, NewGT, or NewZr methods.
+func (pairing *Pairing) NewUncheckedElement(field Field) *Element {
 	return makeUncheckedElement(pairing, true, field)
 }
 
