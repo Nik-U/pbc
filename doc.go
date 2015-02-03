@@ -17,8 +17,9 @@
 	maximize performance.
 
 	Since this library provides low-level access to pairing primitives, it is
-	very easy to construct insecure systems. This library is intended to be used
-	by cryptographers or to implement well-analyzed cryptosystems.
+	very easy to accidentally construct insecure systems. This library is
+	intended to be used by cryptographers or to implement well-analyzed
+	cryptosystems.
 
 	Pairings
 

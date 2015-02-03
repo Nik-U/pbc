@@ -25,6 +25,14 @@ import "runtime"
 //
 // This assigns x = ((a+b)*c)^2.
 //
+// This technique is useful because it allows the target of operations to be
+// different than the operands. However, several convenience functions have
+// been provided to improve the readability of chained calls. These functions
+// are of the form Then*, and implicitly specify the target as the first
+// operand. The above example can be rewritten as:
+//
+// 	x.Add(a, b).ThenMul(c).ThenSquare()
+//
 // Whenever possible, the methods defined on Element use the same names as
 // those in the math/big package.
 //
