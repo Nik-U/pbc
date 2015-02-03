@@ -20,11 +20,11 @@ import (
 	"unsafe"
 )
 
-func (el *uncheckedElement) errorFormat(f fmt.State, c rune, err string) {
+func (el *Element) errorFormat(f fmt.State, c rune, err string) {
 	fmt.Fprintf(f, "%%!%c(%s pbc.Element)", c, err)
 }
 
-func (el *uncheckedElement) nativeFormat(f fmt.State, c rune) {
+func (el *Element) nativeFormat(f fmt.State, c rune) {
 	base := 10
 	if width, ok := f.Width(); ok {
 		if width < 2 || width > 36 {
@@ -35,7 +35,7 @@ func (el *uncheckedElement) nativeFormat(f fmt.State, c rune) {
 	}
 	var buf *C.char
 	var bufLen C.size_t
-	if C.element_out_str_wrapper(&buf, &bufLen, C.int(base), el.d) == 0 {
+	if C.element_out_str_wrapper(&buf, &bufLen, C.int(base), el.cptr) == 0 {
 		el.errorFormat(f, c, "INTERNALERROR")
 		return
 	}
@@ -44,14 +44,14 @@ func (el *uncheckedElement) nativeFormat(f fmt.State, c rune) {
 	fmt.Fprintf(f, "%s", str)
 }
 
-func (el *uncheckedElement) customFormat(f fmt.State, c rune) {
+func (el *Element) customFormat(f fmt.State, c rune) {
 	count := el.Len()
 	if count == 0 {
 		el.BigInt().Format(f, c)
 	} else {
 		fmt.Fprintf(f, "[")
 		for i := 0; i < count; i++ {
-			el.Item(i).(*uncheckedElement).customFormat(f, c)
+			el.Item(i).customFormat(f, c)
 			if i+1 < count {
 				fmt.Fprintf(f, ", ")
 			}
@@ -60,11 +60,15 @@ func (el *uncheckedElement) customFormat(f fmt.State, c rune) {
 	}
 }
 
-func (el *uncheckedElement) Format(f fmt.State, c rune) {
+func (el *Element) Format(f fmt.State, c rune) {
 	switch c {
 	case 'v':
 		if f.Flag('#') {
-			fmt.Fprintf(f, "pbc.Element{Checked: false, Pairing: %p, Addr: %p}", el.pairing, el)
+			if el.checked {
+				fmt.Fprintf(f, "pbc.Element{Checked: true, Integer: %t, Field: %p, Pairing: %p, Addr: %p}", el.isInteger, el.fieldPtr, el.pairing, el)
+			} else {
+				fmt.Fprintf(f, "pbc.Element{Checked: false, Pairing: %p, Addr: %p}", el.pairing, el)
+			}
 			break
 		}
 		fallthrough
@@ -77,21 +81,21 @@ func (el *uncheckedElement) Format(f fmt.State, c rune) {
 	}
 }
 
-func (el *checkedElement) Format(f fmt.State, c rune) {
-	if c == 'v' && f.Flag('#') {
-		fmt.Fprintf(f, "pbc.Element{Checked: true, Integer: %t, Field: %p, Pairing: %p, Addr: %p}", el.isInteger, el.fieldPtr, el.unchecked.pairing, el)
-	} else {
-		el.unchecked.Format(f, c)
-	}
-}
-
-func (el *uncheckedElement) String() string {
+func (el *Element) String() string {
 	return fmt.Sprintf("%s", el)
 }
 
-func (el *checkedElement) String() string { return el.unchecked.String() }
+func (el *Element) SetString(s string, base int) (*Element, bool) {
+	cstr := C.CString(s)
+	defer C.free(unsafe.Pointer(cstr))
 
-func (el *uncheckedElement) Scan(state fmt.ScanState, verb rune) error {
+	if ok := C.element_set_str(el.cptr, cstr, C.int(base)); ok == 0 {
+		return nil, false
+	}
+	return el, true
+}
+
+func (el *Element) Scan(state fmt.ScanState, verb rune) error {
 	if verb != 's' && verb != 'v' {
 		return ErrBadVerb
 	}
@@ -176,8 +180,4 @@ ReadLoop:
 		return ErrBadInput
 	}
 	return nil
-}
-
-func (el *checkedElement) Scan(state fmt.ScanState, verb rune) error {
-	return el.unchecked.Scan(state, verb)
 }

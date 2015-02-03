@@ -44,9 +44,9 @@ import (
 //
 // For example:
 // 	params := pbc.GenerateA(160, 512)
-func GenerateA(rbits uint32, qbits uint32) Params {
+func GenerateA(rbits uint32, qbits uint32) *Params {
 	params := makeParams()
-	C.pbc_param_init_a_gen(params.data, C.int(rbits), C.int(qbits))
+	C.pbc_param_init_a_gen(params.cptr, C.int(rbits), C.int(qbits))
 	return params
 }
 
@@ -55,9 +55,9 @@ func GenerateA(rbits uint32, qbits uint32) Params {
 // r is the product of two large primes. In this case, r should infeasible to
 // factor. Each prime should be at least 512 bits (causing r to be 1024 bits in
 // general), but preferably 1024 bits or more.
-func GenerateA1(r *big.Int) Params {
+func GenerateA1(r *big.Int) *Params {
 	params := makeParams()
-	C.pbc_param_init_a1_gen(params.data, &big2mpz(r)[0])
+	C.pbc_param_init_a1_gen(params.cptr, &big2mpz(r)[0])
 	return params
 }
 
@@ -81,7 +81,7 @@ func GenerateA1(r *big.Int) Params {
 //
 // For example:
 // 	params, err := pbc.GenerateD(9563, 160, 171, 500)
-func GenerateD(d uint32, rbits uint32, qbits uint32, bitlimit uint32) (Params, error) {
+func GenerateD(d uint32, rbits uint32, qbits uint32, bitlimit uint32) (*Params, error) {
 	return generateWithCM(true, d, rbits, qbits, bitlimit)
 }
 
@@ -97,9 +97,9 @@ func GenerateD(d uint32, rbits uint32, qbits uint32, bitlimit uint32) (Params, e
 //
 // For example:
 // 	params, err := pbc.GenerateE(160, 1024)
-func GenerateE(rbits uint32, qbits uint32) Params {
+func GenerateE(rbits uint32, qbits uint32) *Params {
 	params := makeParams()
-	C.pbc_param_init_e_gen(params.data, C.int(rbits), C.int(qbits))
+	C.pbc_param_init_e_gen(params.cptr, C.int(rbits), C.int(qbits))
 	return params
 }
 
@@ -115,9 +115,9 @@ func GenerateE(rbits uint32, qbits uint32) Params {
 //
 // For example:
 // 	params, err := pbc.GenerateF(160)
-func GenerateF(bits uint32) Params {
+func GenerateF(bits uint32) *Params {
 	params := makeParams()
-	C.pbc_param_init_f_gen(params.data, C.int(bits))
+	C.pbc_param_init_f_gen(params.cptr, C.int(bits))
 	return params
 }
 
@@ -132,14 +132,14 @@ func GenerateF(bits uint32) Params {
 //
 // For example:
 // 	params, err := pbc.GenerateG(9563, 160, 171, 500)
-func GenerateG(d uint32, rbits uint32, qbits uint32, bitlimit uint32) (Params, error) {
+func GenerateG(d uint32, rbits uint32, qbits uint32, bitlimit uint32) (*Params, error) {
 	return generateWithCM(false, d, qbits, rbits, bitlimit)
 }
 
-func generateWithCM(typeD bool, d uint32, rbits uint32, qbits uint32, bitlimit uint32) (Params, error) {
+func generateWithCM(typeD bool, d uint32, rbits uint32, qbits uint32, bitlimit uint32) (*Params, error) {
 	params := makeParams()
 	settings := &C.check_pairing_settings_t{
-		params: params.data,
+		params: params.cptr,
 		rbits:  C.uint32_t(rbits),
 		qbits:  C.uint32_t(qbits),
 	}

@@ -1,10 +1,12 @@
 package pbc
 
+import "fmt"
+
 // This example generates a pairing and some random group elements, then applies
 // the pairing operation.
 func Example() {
 	// In a real application, generate this once and publish it
-	params := pbc.GenerateA(160, 512)
+	params := GenerateA(160, 512)
 
 	pairing := params.NewPairing()
 
@@ -16,7 +18,8 @@ func Example() {
 	// Generate random group elements and pair them
 	g.Rand()
 	h.Rand()
-	fmt.Printf("g = %v\nh = %v\n", g, h)
+	fmt.Printf("g = %s\n", g)
+	fmt.Printf("h = %s\n", h)
 	x.Pair(g, h)
-	fmt.Printf("e(g,h) = %v\n", x)
+	fmt.Printf("e(g,h) = %s\n", x)
 }

@@ -29,47 +29,20 @@ const (
 // or unchecked. Unchecked elements are slightly faster, but do not check to
 // ensure that operations make sense. Checked elements defend against a variety
 // of errors. For more details, see the Element documentation.
-type Pairing interface {
-	// IsSymmetric returns true if G1 == G2 for this pairing.
-	IsSymmetric() bool
-
-	// Various methods to return the sizes of group elements.
-	// *Length() returns the length of an element in bytes.
-	// *XLength() returns the length of an X coordinate only, in bytes.
-	// *CompressedLength() returns the length of a compressed element in bytes.
-	G1Length() uint
-	G1XLength() uint
-	G1CompressedLength() uint
-	G2Length() uint
-	G2XLength() uint
-	G2CompressedLength() uint
-	GTLength() uint
-	ZrLength() uint
-
-	// Initialization methods for group elements.
-	NewG1() Element
-	NewG2() Element
-	NewGT() Element
-	NewZr() Element
-
-	// Initializes an element without type checking.
-	NewElement(Field) Element
-}
-
-type pairingImpl struct {
-	data *C.struct_pairing_s
+type Pairing struct {
+	cptr *C.struct_pairing_s
 }
 
 // NewPairing instantiates a pairing from a set of parameters.
-func NewPairing(params Params) Pairing {
+func NewPairing(params *Params) *Pairing {
 	pairing := makePairing()
-	C.pairing_init_pbc_param(pairing.data, params.(*paramsImpl).data)
+	C.pairing_init_pbc_param(pairing.cptr, params.cptr)
 	return pairing
 }
 
 // NewPairingFromReader loads pairing parameters from a Reader and instantiates
 // a pairing.
-func NewPairingFromReader(params io.Reader) (Pairing, error) {
+func NewPairingFromReader(params io.Reader) (*Pairing, error) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(params)
 	return NewPairingFromString(buf.String())
@@ -77,7 +50,7 @@ func NewPairingFromReader(params io.Reader) (Pairing, error) {
 
 // NewPairingFromString loads pairing parameters from a string and instantiates
 // a pairing.
-func NewPairingFromString(params string) (Pairing, error) {
+func NewPairingFromString(params string) (*Pairing, error) {
 	p, err := NewParamsFromString(params)
 	if err != nil {
 		return nil, err
@@ -85,54 +58,69 @@ func NewPairingFromString(params string) (Pairing, error) {
 	return NewPairing(p), nil
 }
 
-func (pairing *pairingImpl) IsSymmetric() bool {
-	return C.pairing_is_symmetric(pairing.data) != 0
+// IsSymmetric returns true if G1 == G2 for this pairing.
+func (pairing *Pairing) IsSymmetric() bool {
+	return C.pairing_is_symmetric(pairing.cptr) != 0
 }
 
-func (pairing *pairingImpl) G1Length() uint {
-	return uint(C.pairing_length_in_bytes_G1(pairing.data))
+func (pairing *Pairing) G1Length() uint {
+	return uint(C.pairing_length_in_bytes_G1(pairing.cptr))
 }
 
-func (pairing *pairingImpl) G1XLength() uint {
-	return uint(C.pairing_length_in_bytes_x_only_G1(pairing.data))
+func (pairing *Pairing) G1XLength() uint {
+	return uint(C.pairing_length_in_bytes_x_only_G1(pairing.cptr))
 }
 
-func (pairing *pairingImpl) G1CompressedLength() uint {
-	return uint(C.pairing_length_in_bytes_compressed_G1(pairing.data))
+func (pairing *Pairing) G1CompressedLength() uint {
+	return uint(C.pairing_length_in_bytes_compressed_G1(pairing.cptr))
 }
 
-func (pairing *pairingImpl) G2Length() uint {
-	return uint(C.pairing_length_in_bytes_G2(pairing.data))
+func (pairing *Pairing) G2Length() uint {
+	return uint(C.pairing_length_in_bytes_G2(pairing.cptr))
 }
 
-func (pairing *pairingImpl) G2XLength() uint {
-	return uint(C.pairing_length_in_bytes_x_only_G2(pairing.data))
+func (pairing *Pairing) G2XLength() uint {
+	return uint(C.pairing_length_in_bytes_x_only_G2(pairing.cptr))
 }
 
-func (pairing *pairingImpl) G2CompressedLength() uint {
-	return uint(C.pairing_length_in_bytes_compressed_G2(pairing.data))
+func (pairing *Pairing) G2CompressedLength() uint {
+	return uint(C.pairing_length_in_bytes_compressed_G2(pairing.cptr))
 }
 
-func (pairing *pairingImpl) GTLength() uint {
-	return uint(C.pairing_length_in_bytes_GT(pairing.data))
+func (pairing *Pairing) GTLength() uint {
+	return uint(C.pairing_length_in_bytes_GT(pairing.cptr))
 }
 
-func (pairing *pairingImpl) ZrLength() uint {
-	return uint(C.pairing_length_in_bytes_Zr(pairing.data))
+func (pairing *Pairing) ZrLength() uint {
+	return uint(C.pairing_length_in_bytes_Zr(pairing.cptr))
 }
 
-func (pairing *pairingImpl) NewG1() Element                 { return makeChecked(pairing, G1, pairing.data.G1) }
-func (pairing *pairingImpl) NewG2() Element                 { return makeChecked(pairing, G2, pairing.data.G2) }
-func (pairing *pairingImpl) NewGT() Element                 { return makeChecked(pairing, GT, &pairing.data.GT[0]) }
-func (pairing *pairingImpl) NewZr() Element                 { return makeChecked(pairing, Zr, &pairing.data.Zr[0]) }
-func (pairing *pairingImpl) NewElement(field Field) Element { return makeUnchecked(pairing, field) }
-
-func clearPairing(pairing *pairingImpl) {
-	C.pairing_clear(pairing.data)
+func (pairing *Pairing) NewG1() *Element {
+	return makeCheckedElement(pairing, G1, pairing.cptr.G1)
 }
 
-func makePairing() *pairingImpl {
-	pairing := &pairingImpl{data: &C.struct_pairing_s{}}
+func (pairing *Pairing) NewG2() *Element {
+	return makeCheckedElement(pairing, G2, pairing.cptr.G2)
+}
+
+func (pairing *Pairing) NewGT() *Element {
+	return makeCheckedElement(pairing, GT, &pairing.cptr.GT[0])
+}
+
+func (pairing *Pairing) NewZr() *Element {
+	return makeCheckedElement(pairing, Zr, &pairing.cptr.Zr[0])
+}
+
+func (pairing *Pairing) NewElement(field Field) *Element {
+	return makeUncheckedElement(pairing, true, field)
+}
+
+func clearPairing(pairing *Pairing) {
+	C.pairing_clear(pairing.cptr)
+}
+
+func makePairing() *Pairing {
+	pairing := &Pairing{cptr: &C.struct_pairing_s{}}
 	runtime.SetFinalizer(pairing, clearPairing)
 	return pairing
 }
