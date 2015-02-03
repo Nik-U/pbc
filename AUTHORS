@@ -1,0 +1,9 @@
+The PBC Go Wrapper credits
+
+Nik Unger <pbc (at) taintedbit : com> (Original author)
+
+-------------------------------------------------------------------------------
+
+The underlying functionality of this library is provided by the PBC library.
+The PBC library was originally authored by Ben Lynn, with many additional
+contributors. See https://crypto.stanford.edu/pbc/ for more details.

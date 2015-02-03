@@ -1,3 +1,26 @@
+/*
+	Copyright © 2015 Nik Unger
+
+	This file is part of The PBC Go Wrapper.
+
+	The PBC Go Wrapper is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	The PBC Go Wrapper is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with The PBC Go Wrapper. If not, see <http://www.gnu.org/licenses/>.
+
+	The PBC Go Wrapper makes use of The PBC library. The PBC Library and its
+	use are covered under the terms of the GNU Lesser General Public License
+	version 3, or (at your option) any later version.
+*/
+
 package pbc
 
 /*
@@ -23,7 +46,8 @@ import "runtime"
 //
 // 	x.Add(a, b).Mul(x, c).Square(x)
 //
-// This assigns x = ((a+b)*c)^2.
+// This assigns x = ((a+b)*c)^2. Whenever possible, the methods defined on
+// Element use the same names as those in the math/big package.
 //
 // This technique is useful because it allows the target of operations to be
 // different than the operands. However, several convenience functions have
@@ -33,8 +57,11 @@ import "runtime"
 //
 // 	x.Add(a, b).ThenMul(c).ThenSquare()
 //
-// Whenever possible, the methods defined on Element use the same names as
-// those in the math/big package.
+// For some applications, it is more readable to avoid method chaining:
+//
+// 	x.Add(a, b)
+// 	x.Mul(x, c)
+// 	x.Square(x)
 //
 // The addition and multiplication functions perform addition and
 // multiplication operations in rings and fields. For groups of points on an

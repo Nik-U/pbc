@@ -1,3 +1,26 @@
+/*
+	Copyright © 2015 Nik Unger
+
+	This file is part of The PBC Go Wrapper.
+
+	The PBC Go Wrapper is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	The PBC Go Wrapper is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with The PBC Go Wrapper. If not, see <http://www.gnu.org/licenses/>.
+
+	The PBC Go Wrapper makes use of The PBC library. The PBC Library and its
+	use are covered under the terms of the GNU Lesser General Public License
+	version 3, or (at your option) any later version.
+*/
+
 package pbc
 
 /*
@@ -12,6 +35,9 @@ import (
 )
 
 // BigInt converts the Element to a big.Int if such an operation makes sense.
+// Note that elements in GT cannot be converted using this method, even though
+// this is possible in the original PBC library. If callers wish to convert the
+// first coordinate into an integer, they should explicitly call X().
 //
 // Requirements:
 // el is expressible as an integer (e.g., an element of Zn, but not a point).

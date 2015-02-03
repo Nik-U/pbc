@@ -1,4 +1,27 @@
 /*
+	Copyright © 2015 Nik Unger
+
+	This file is part of The PBC Go Wrapper.
+
+	The PBC Go Wrapper is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	The PBC Go Wrapper is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with The PBC Go Wrapper. If not, see <http://www.gnu.org/licenses/>.
+
+	The PBC Go Wrapper makes use of The PBC library. The PBC Library and its
+	use are covered under the terms of the GNU Lesser General Public License
+	version 3, or (at your option) any later version.
+*/
+
+/*
 	Package pbc provides structures for building pairing-based cryptosystems. It
 	is a wrapper around the Pairing-Based Cryptography (PBC) Library authored by
 	Ben Lynn (https://crypto.stanford.edu/pbc/).
@@ -69,11 +92,32 @@
 	For more information or to compile from source, visit https://gmplib.org/
 
 	To install the PBC library, download the appropriate files for your system
-	from https://crypto.stanford.edu/pbc/download.html. The source can be
-	compiled and installed using the usual GNU Build System:
+	from https://crypto.stanford.edu/pbc/download.html. PBC has three
+	dependencies: the gcc compiler, flex (http://flex.sourceforge.net/), and
+	bison (https://www.gnu.org/software/bison/). See the respective sites for
+	installation instructions. Most distributions include packages for these
+	libraries. For example, in Debian / Ubuntu:
+
+		sudo apt-get install build-essential flex bison
+
+	The PBC source can be compiled and installed using the usual GNU Build
+	System:
 
 		./configure
 		make
 		make install
+
+	After installing, you may need to rebuild the search path for libraries:
+
+		sudo ldconfig
+
+	License
+
+	This package is free software: you can redistribute it and/or modify it
+	under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or (at your
+	option) any later version.
+
+	For additional details, see the COPYING and COPYING.LESSER files.
 */
 package pbc
