@@ -35,9 +35,10 @@ import (
 )
 
 // BigInt converts the Element to a big.Int if such an operation makes sense.
-// Note that elements in GT cannot be converted using this method, even though
-// this is possible in the original PBC library. If callers wish to convert the
-// first coordinate into an integer, they should explicitly call X().
+// Note that elliptic curve points cannot be converted using this method, even
+// though this is possible in the original PBC library. If callers wish to
+// convert the first coordinate into an integer, they should explicitly call
+// X().
 //
 // Requirements:
 // el is expressible as an integer (e.g., an element of Zn, but not a point).

@@ -66,7 +66,7 @@
 	implemented in the library. Each type has different time and space
 	requirements. For more information about the types, see the documentation
 	for the corresponding generator calls, or the PBC manual page at
-	https://crypto.stanford.edu/pbc/manual/ch08s03.html.
+	https://crypto.stanford.edu/pbc/manual/ch05s01.html.
 
 	Dependencies
 
@@ -105,7 +105,7 @@
 
 		./configure
 		make
-		make install
+		sudo make install
 
 	After installing, you may need to rebuild the search path for libraries:
 

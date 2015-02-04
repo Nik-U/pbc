@@ -70,10 +70,12 @@ import "runtime"
 // both 0 and 1 represent the identity element). It is recommended that
 // programs choose one convention and stick with it to avoid confusion.
 //
+// In contrast, the GT group is currently implemented as a subgroup of a finite
+// field, so only multiplicative operations should be used for GT.
+//
 // Not all operations are valid for all elements. For example, pairing
-// operations require an element from G1, and element from G2, and a target
-// from GT. As another example, elements in a ring cannot be inverted in
-// general.
+// operations require an element from G1, an element from G2, and a target from
+// GT. As another example, elements in a ring cannot be inverted in general.
 //
 // The PBC library does not attempt to detect invalid element operations. If an
 // invalid operation is performed, several outcomes are possible. In the best
@@ -93,7 +95,7 @@ import "runtime"
 // whether or not the target element is checked. Thus, if an unchecked element
 // is passed a checked element as part of an operation, the operation will not
 // be checked. Checked elements expect that all arguments to their methods are
-// also checked, and will panic with ErrUncheckedOp if not.
+// also checked, and will panic with ErrUncheckedOp if they are not.
 //
 // Note that not all possible errors can be detected by checked elements;
 // ultimately, it is the responsibility of the caller to ensure that the

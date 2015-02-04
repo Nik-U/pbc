@@ -36,7 +36,8 @@ import (
 
 // Field denotes the various possible algebraic structures associated with a
 // pairing. G1, G2, and GT are the groups involved in the pairing operation. Zr
-// is the field of integers with order r, where r is the order of the groups.
+// is the field of integers with order r, where r is the order of G1, G2, and
+// GT.
 type Field int
 
 const (

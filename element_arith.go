@@ -82,7 +82,7 @@ func (el *Element) IsSquare() bool {
 }
 
 // Sign returns 0 if el is 0. If el is not 0, the behavior depends on the
-// algebraic structure, but has the property that el.Sign() == !neg.Sign()
+// algebraic structure, but has the property that el.Sign() == -neg.Sign()
 // where neg is the negation of el.
 func (el *Element) Sign() int {
 	sign := int64(C.element_sign(el.cptr))
@@ -322,7 +322,7 @@ func (el *Element) Pow3Big(x *Element, i *big.Int, y *Element, j *big.Int, z *El
 	return el
 }
 
-// Pow3Big sets el = x^i * y^j * z^k and returns el. This is generally faster
+// Pow3Zn sets el = x^i * y^j * z^k and returns el. This is generally faster
 // than performing separate exponentiations.
 //
 // Requirements:
