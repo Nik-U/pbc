@@ -1,0 +1,20 @@
+language: go
+
+go:
+- 1.4
+
+before_install: sudo apt-get update
+install:
+- sudo apt-get install libgmp-dev
+- wget --no-check-certificate https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz
+- tar xvf pbc-0.5.14.tar.gz
+- rm pbc-0.5.14.tar.gz
+- cd pbc-0.5.14
+- ./setup
+- ./configure
+- make
+- sudo make install
+- sudo ldconfig
+- cd ..
+- rm -rf pbc-0.5.14
+- go get -t ./...

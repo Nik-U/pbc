@@ -1,4 +1,4 @@
-# The PBC Go Wrapper
+# The PBC Go Wrapper [![Build Status](https://travis-ci.org/Nik-U/pbc.svg)](https://travis-ci.org/Nik-U/pbc) [![GoDoc](https://godoc.org/github.com/Nik-U/pbc?status.svg)](https://godoc.org/github.com/Nik-U/pbc)
 
 Package pbc provides structures for building pairing-based cryptosystems. It
 is a wrapper around the Pairing-Based Cryptography (PBC) Library authored by
