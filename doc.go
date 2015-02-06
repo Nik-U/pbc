@@ -71,9 +71,6 @@
 	This package must be compiled using cgo. It also requires the installation
 	of GMP and PBC. During the build process, this package will attempt to
 	include <gmp.h> and <pbc/pbc.h>, and then dynamically link to GMP and PBC.
-	It also expects a POSIX-like environment for several C functions. For this
-	reason, this package cannot be used in Windows without a POSIX compatibility
-	layer and a gcc compiler.
 
 	Most systems include a package for GMP. To install GMP in Debian / Ubuntu:
 
@@ -108,6 +105,13 @@
 	After installing, you may need to rebuild the search path for libraries:
 
 		sudo ldconfig
+
+	It is possible to install the package on Windows through the use of MinGW
+	and MSYS. MSYS is required for installing PBC, while GMP can be installed
+	through a package. Based on your MinGW installation, you may need to add
+	"-I/usr/local/include" to CPPFLAGS and "-L/usr/local/lib" to LDFLAGS when
+	building PBC. Likewise, you may need to add these options to CGO_CPPFLAGS
+	and CGO_LDFLAGS when installing this package.
 
 	License
 

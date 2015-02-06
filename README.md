@@ -38,9 +38,7 @@ cryptosystems.
 This package must be compiled using cgo. It also requires the installation
 of GMP and PBC. During the build process, this package will attempt to
 include `gmp.h` and `pbc/pbc.h`, and then dynamically link to GMP and PBC.
-It also expects a POSIX-like environment for several C functions. For this
-reason, this package cannot be used in Windows without a POSIX compatibility
-layer and a gcc compiler.
+Installation on Windows requires the use of MinGW.
 
 ## Documentation
 For additional installation instructions and documentation, see

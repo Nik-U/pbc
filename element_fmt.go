@@ -23,13 +23,13 @@ package pbc
 
 /*
 #include <pbc/pbc.h>
+#include "memstream.h"
 
 int element_out_str_wrapper(char** bufp, size_t* sizep, int base, element_t e) {
-	FILE* handle = open_memstream(bufp, sizep);
-	if (!handle) return 0;
-	element_out_str(handle, base, e);
-	fclose(handle);
-	return 1;
+	memstream_t* stream = pbc_open_memstream();
+	if (stream == NULL) return 0;
+	element_out_str(pbc_memstream_to_fd(stream), base, e);
+	return pbc_close_memstream(stream, bufp, sizep);
 }
 */
 import "C"
