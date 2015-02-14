@@ -99,7 +99,7 @@ func GenerateA1(r *big.Int) *Params {
 // of D, no suitable curves can be found. In this case, GenerateD returns nil
 // and ErrNoSuitableCurves.
 //
-// The rbits and qbits parameters sit minimum sizes for group orders. To be
+// The rbits and qbits parameters set minimum sizes for group orders. To be
 // secure, generic discrete log algorithms must be infeasible in groups of order
 // r, and finite field discrete log algorithms must be infeasible in groups of
 // order q^6.

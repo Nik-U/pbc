@@ -85,9 +85,9 @@ import "runtime"
 // or unchecked. Unchecked elements do not perform any sanity checks; calls are
 // passed directly to the C library, with the possible consequences mentioned
 // above. Checked elements attempt to catch a variety of errors, such as when
-// elements from mismatched algebraic structures or pairings. If an error is
-// detected, the operation will panic with ErrIllegalOp, ErrUncheckedOp,
-// ErrIncompatible, or a similar error.
+// invalid operations are performed on elements from mismatched algebraic
+// structures or pairings. If an error is detected, the operation will panic
+// with ErrIllegalOp, ErrUncheckedOp, ErrIncompatible, or a similar error.
 //
 // The decision on whether or not to check operations is based solely on
 // whether or not the target element is checked. Thus, if an unchecked element

@@ -78,7 +78,7 @@
 
 	For an RPM installation with YUM:
 
-		sudo yum install gmp
+		sudo yum install gmp-devel
 
 	For installation with Fink (http://www.finkproject.org/) on Mac OS X:
 

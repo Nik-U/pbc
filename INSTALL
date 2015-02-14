@@ -11,7 +11,7 @@ Most systems include a package for GMP. To install GMP in Debian / Ubuntu:
 
 For an RPM installation with YUM:
 
-	sudo yum install gmp
+	sudo yum install gmp-devel
 
 For installation with Fink (http://www.finkproject.org/) on Mac OS X:
 
