@@ -23,6 +23,18 @@ package pbc
 
 /*
 #include <pbc/pbc.h>
+
+struct element_pp_s* newElementPPStruct() { return malloc(sizeof(struct element_pp_s)); }
+void freeElementPPStruct(struct element_pp_s* x) {
+	element_pp_clear(x);
+	free(x);
+}
+
+struct pairing_pp_s* newPairingPPStruct() { return malloc(sizeof(struct pairing_pp_s)); }
+void freePairingPPStruct(struct pairing_pp_s* x) {
+	pairing_pp_clear(x);
+	free(x);
+}
 */
 import "C"
 
@@ -141,7 +153,7 @@ func (el *Element) MulBig(x *Element, i *big.Int) *Element {
 	if el.checked {
 		el.checkCompatible(x)
 	}
-	C.element_mul_mpz(el.cptr, x.cptr, &big2mpz(i)[0])
+	C.element_mul_mpz(el.cptr, x.cptr, &big2mpz(i).i[0])
 	return el
 }
 
@@ -257,7 +269,7 @@ func (el *Element) PowBig(x *Element, i *big.Int) *Element {
 	if el.checked {
 		el.checkCompatible(x)
 	}
-	C.element_pow_mpz(el.cptr, x.cptr, &big2mpz(i)[0])
+	C.element_pow_mpz(el.cptr, x.cptr, &big2mpz(i).i[0])
 	return el
 }
 
@@ -286,7 +298,7 @@ func (el *Element) Pow2Big(x *Element, i *big.Int, y *Element, j *big.Int) *Elem
 	if el.checked {
 		el.checkAllCompatible(x, y)
 	}
-	C.element_pow2_mpz(el.cptr, x.cptr, &big2mpz(i)[0], y.cptr, &big2mpz(j)[0])
+	C.element_pow2_mpz(el.cptr, x.cptr, &big2mpz(i).i[0], y.cptr, &big2mpz(j).i[0])
 	return el
 }
 
@@ -316,7 +328,7 @@ func (el *Element) Pow3Big(x *Element, i *big.Int, y *Element, j *big.Int, z *El
 	if el.checked {
 		el.checkAllCompatible(x, y, z)
 	}
-	C.element_pow3_mpz(el.cptr, x.cptr, &big2mpz(i)[0], y.cptr, &big2mpz(j)[0], z.cptr, &big2mpz(k)[0])
+	C.element_pow3_mpz(el.cptr, x.cptr, &big2mpz(i).i[0], y.cptr, &big2mpz(j).i[0], z.cptr, &big2mpz(k).i[0])
 	return el
 }
 
@@ -370,7 +382,7 @@ func (power *Power) PowZn(target *Element, i *Element) *Element {
 }
 
 func clearPower(power *Power) {
-	C.element_pp_clear(power.pp)
+	C.freeElementPPStruct(power.pp)
 }
 
 // PreparePower generates pre-processing data for repeatedly exponentiating el.
@@ -379,7 +391,7 @@ func clearPower(power *Power) {
 func (el *Element) PreparePower() *Power {
 	power := &Power{
 		source: el,
-		pp:     &C.struct_element_pp_s{},
+		pp:     C.newElementPPStruct(),
 	}
 	C.element_pp_init(power.pp, el.cptr)
 	runtime.SetFinalizer(power, clearPower)
@@ -395,7 +407,7 @@ func (el *Element) PowerBig(power *Power, i *big.Int) *Element {
 	if el.checked {
 		el.checkCompatible(power.source)
 	}
-	C.element_pp_pow(el.cptr, &big2mpz(i)[0], power.pp)
+	C.element_pp_pow(el.cptr, &big2mpz(i).i[0], power.pp)
 	return el
 }
 
@@ -551,7 +563,7 @@ func (pairer *Pairer) Pair(target *Element, y *Element) *Element {
 }
 
 func clearPairer(pairer *Pairer) {
-	C.pairing_pp_clear(pairer.pp)
+	C.freePairingPPStruct(pairer.pp)
 }
 
 // PreparePairer generates pre-processing data for repeatedly pairing el. The
@@ -566,7 +578,7 @@ func (el *Element) PreparePairer() *Pairer {
 	}
 	pairer := &Pairer{
 		source: el,
-		pp:     &C.struct_pairing_pp_s{},
+		pp:     C.newPairingPPStruct(),
 	}
 	C.pairing_pp_init(pairer.pp, el.cptr, el.pairing.cptr)
 	runtime.SetFinalizer(pairer, clearPairer)

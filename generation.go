@@ -82,7 +82,7 @@ func GenerateA(rbits uint32, qbits uint32) *Params {
 // More details: https://crypto.stanford.edu/pbc/manual/ch08s03.html
 func GenerateA1(r *big.Int) *Params {
 	params := makeParams()
-	C.pbc_param_init_a1_gen(params.cptr, &big2mpz(r)[0])
+	C.pbc_param_init_a1_gen(params.cptr, &big2mpz(r).i[0])
 	return params
 }
 

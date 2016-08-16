@@ -24,6 +24,7 @@ package pbc
 import (
 	"crypto/sha256"
 	"math/big"
+	"runtime"
 	"testing"
 )
 
@@ -521,5 +522,13 @@ func TestZhangKim(t *testing.T) {
 	logElement(t14, "H(m, [e(S1, P)][e(Qid, Ppub)^(-c1)])", t)
 	if !t14.Equals(c) {
 		t.Fatal("signature does not verify")
+	}
+}
+
+// TestGC ensures that there are no errors when running struct finalizers.
+func TestGC(t *testing.T) {
+	TestBLS(t)
+	for i := 0; i < 5; i++ { // Multiple rounds to resolve dependencies
+		runtime.GC()
 	}
 }

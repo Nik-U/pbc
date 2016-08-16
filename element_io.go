@@ -44,9 +44,9 @@ func (el *Element) BigInt() *big.Int {
 	if el.checked {
 		el.checkInteger()
 	}
-	mpz := newMpz()
-	C.element_to_mpz(&mpz[0], el.cptr)
-	return mpz2big(mpz)
+	m := newMpz()
+	C.element_to_mpz(&m.i[0], el.cptr)
+	return mpz2big(m)
 }
 
 // Set sets the value of el to be the same as src.
@@ -83,7 +83,7 @@ func (el *Element) SetBig(i *big.Int) *Element {
 	if el.checked {
 		el.checkInteger()
 	}
-	C.element_set_mpz(el.cptr, &big2mpz(i)[0])
+	C.element_set_mpz(el.cptr, &big2mpz(i).i[0])
 	return el
 }
 

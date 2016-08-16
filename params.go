@@ -25,6 +25,12 @@ package pbc
 #include <pbc/pbc.h>
 #include "memstream.h"
 
+struct pbc_param_s* newParamStruct() { return malloc(sizeof(struct pbc_param_s)); }
+void freeParamStruct(struct pbc_param_s* x) {
+	pbc_param_clear(x);
+	free(x);
+}
+
 int param_out_str_wrapper(char** bufp, size_t* sizep, pbc_param_t p) {
 	memstream_t* stream = pbc_open_memstream();
 	if (stream == NULL) return 0;
@@ -102,11 +108,11 @@ func (params *Params) String() string {
 }
 
 func clearParams(params *Params) {
-	C.pbc_param_clear(params.cptr)
+	C.freeParamStruct(params.cptr)
 }
 
 func makeParams() *Params {
-	params := &Params{cptr: &C.struct_pbc_param_s{}}
+	params := &Params{cptr: C.newParamStruct()}
 	runtime.SetFinalizer(params, clearParams)
 	return params
 }

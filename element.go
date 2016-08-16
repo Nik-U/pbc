@@ -23,6 +23,12 @@ package pbc
 
 /*
 #include <pbc/pbc.h>
+
+struct element_s* newElementStruct() { return malloc(sizeof(struct element_s)); }
+void freeElementStruct(struct element_s* x) {
+	element_clear(x);
+	free(x);
+}
 */
 import "C"
 
@@ -108,12 +114,12 @@ type Element struct {
 }
 
 func clearElement(element *Element) {
-	C.element_clear(element.cptr)
+	C.freeElementStruct(element.cptr)
 }
 
 func makeUncheckedElement(pairing *Pairing, initialize bool, field Field) *Element {
 	element := &Element{
-		cptr:    &C.struct_element_s{},
+		cptr:    C.newElementStruct(),
 		pairing: pairing,
 	}
 	if initialize {

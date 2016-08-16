@@ -23,6 +23,12 @@ package pbc
 
 /*
 #include <pbc/pbc.h>
+
+struct pairing_s* newPairingStruct() { return malloc(sizeof(struct pairing_s)); }
+void freePairingStruct(struct pairing_s* x) {
+	pairing_clear(x);
+	free(x);
+}
 */
 import "C"
 
@@ -152,11 +158,11 @@ func (pairing *Pairing) NewUncheckedElement(field Field) *Element {
 }
 
 func clearPairing(pairing *Pairing) {
-	C.pairing_clear(pairing.cptr)
+	C.freePairingStruct(pairing.cptr)
 }
 
 func makePairing() *Pairing {
-	pairing := &Pairing{cptr: &C.struct_pairing_s{}}
+	pairing := &Pairing{cptr: C.newPairingStruct()}
 	runtime.SetFinalizer(pairing, clearPairing)
 	return pairing
 }
