@@ -50,7 +50,11 @@ func Example() {
 }
 
 // This example displays an element in a variety of formats.
-func ExampleElement_Format(element *pbc.Element) {
+func ExampleElement_Format() {
+	var element *pbc.Element
+
+	// ...populate element...
+
 	fmt.Printf("%v", element)    // Print in PBC format
 	fmt.Printf("%s", element)    // Same as above
 	fmt.Printf("%36v", element)  // Print in PBC format, base 36
