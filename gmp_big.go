@@ -23,6 +23,17 @@ package pbc
 
 /*
 #include <gmp.h>
+#include <stdlib.h>
+
+mpz_t* newMpzT() {
+	mpz_t* x = malloc(sizeof(mpz_t));
+	mpz_init(*x);
+	return x;
+}
+void freeMpzT(mpz_t* x) {
+	mpz_clear(*x);
+	free(x);
+}
 */
 import "C"
 
@@ -33,19 +44,19 @@ import (
 )
 
 type mpz struct {
-	i C.mpz_t
+	i *C.mpz_t
 }
 
 var wordSize C.size_t
 var bitsPerWord C.size_t
 
 func clearMpz(x *mpz) {
-	C.mpz_clear(&x.i[0])
+	C.freeMpzT(x.i)
 }
 
 func newMpz() *mpz {
 	out := &mpz{}
-	C.mpz_init(&out.i[0])
+	out.i = C.newMpzT()
 	runtime.SetFinalizer(out, clearMpz)
 	return out
 }

@@ -26,7 +26,7 @@ void pbc_init_random();
 
 void goRandomHook(mpz_t out, mpz_t limit, void* data) {
 	UNUSED_VAR(data);
-	goGenerateRandom(out, limit);
+	goGenerateRandom(&out, &limit);
 }
 
 void installRandomHook() {
