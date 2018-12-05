@@ -56,13 +56,25 @@ const (
 // created in G1, G2, GT, or Zr. Additionally, elements can be checked or
 // unchecked. See the Element type for more details.
 type Pairing struct {
+	params *Params // Prevents garbage collection
 	cptr *C.struct_pairing_s
 }
 
 // NewPairing instantiates a pairing from a set of parameters.
 func NewPairing(params *Params) *Pairing {
-	pairing := makePairing()
+	pairing := makePairing(params)
 	C.pairing_init_pbc_param(pairing.cptr, params.cptr)
+
+	// pairing.params must point to params during the C call. Otherwise, the
+	// garbage collector might free params.cptr (through the Params finalizer)
+	// while pairing_init_pbc_param is still running! However, this function no
+	// longer requires access to the parameters once control has returned. We
+	// set pairing.params to nil to indicate that we no longer care if params
+	// is garbage collected. If the caller still needs params (e.g., to
+	// initialize more pairings), the garbage collector will know not to free
+	// params even though pairing.params does not point to it.
+	pairing.params = nil
+
 	return pairing
 }
 
@@ -161,8 +173,11 @@ func clearPairing(pairing *Pairing) {
 	C.freePairingStruct(pairing.cptr)
 }
 
-func makePairing() *Pairing {
-	pairing := &Pairing{cptr: C.newPairingStruct()}
+func makePairing(params *Params) *Pairing {
+	pairing := &Pairing{
+		params: params,
+		cptr: C.newPairingStruct(),
+	}
 	runtime.SetFinalizer(pairing, clearPairing)
 	return pairing
 }
