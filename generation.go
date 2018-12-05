@@ -1,4 +1,4 @@
-// Copyright © 2015 Nik Unger
+// Copyright © 2018 Nik Unger
 //
 // This file is part of The PBC Go Wrapper.
 //
